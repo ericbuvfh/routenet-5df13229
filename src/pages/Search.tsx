@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search as SearchIcon, Mic, MicOff, X, Loader2, Clock, User, Music, Disc, Radio, Play, MoreVertical, Plus, Download, ListPlus } from "lucide-react";
+import { Search as SearchIcon, Mic, MicOff, X, Loader2, Clock, User, Music, Disc, Radio, Play, MoreVertical, Plus, Download, ListPlus, ArrowLeft } from "lucide-react";
 import { AddToPlaylistDialog } from "@/components/AddToPlaylistDialog";
 
 import { TrackCard } from "@/components/cards/TrackCard";
@@ -17,7 +17,11 @@ import { useQuery } from "@tanstack/react-query";
 import { getUserPlaylists } from "@/services/playlistService";
 import { getCombinedScore } from "@/lib/balancedPlaylist";
 import { supabase } from "@/integrations/supabase/client";
-import { readSearchCache, writeSearchCache, isBlockedArtist, getBlockedArtists, blockArtist } from "@/services/searchCache";
+import {
+  readSearchCache, writeSearchCache, isBlockedArtist, getBlockedArtists, blockArtist,
+  getRecentSearchItems, addRecentSearchItem, removeRecentSearchItem, clearRecentSearchItems,
+  type RecentSearchItem,
+} from "@/services/searchCache";
 
 const SEARCH_HISTORY_KEY = 'echotunes_search_history';
 const MAX_HISTORY = 10;
