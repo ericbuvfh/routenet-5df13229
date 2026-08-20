@@ -475,6 +475,7 @@ export default function Search() {
               <div className="space-y-1">{filteredAlbums.map((a, i) => (
                 <motion.div key={a.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
                   className="flex items-center gap-3 rounded-lg p-2 cursor-pointer hover:bg-white/10" onClick={() => navigate(`/album/${a.id.toString().replace("deezer-", "")}`)}>
+                  {/* album row */}
                   <img src={a.artwork} alt="" className="h-12 w-12 rounded-lg object-cover flex-shrink-0" />
                   <div><p className="text-sm font-semibold text-foreground">{a.title}</p><p className="text-xs text-muted-foreground">Album • {a.artist}</p></div>
                 </motion.div>
