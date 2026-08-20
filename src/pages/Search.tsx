@@ -260,6 +260,12 @@ export default function Search() {
     if (debouncedQuery.length < 2) return;
     if (!liveTracks.length && !liveArtists.length && !liveAlbums.length) return;
     writeSearchCache(debouncedQuery, { tracks: liveTracks, artists: liveArtists, albums: liveAlbums });
+    const top = liveTracks[0];
+    addRecentSearchItem({
+      id: debouncedQuery.toLowerCase(), kind: "query", title: debouncedQuery,
+      subtitle: top ? `Song • ${top.artist}` : "Search",
+      artwork: top?.artwork, query: debouncedQuery,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedQuery, liveTracks.length, liveArtists.length, liveAlbums.length]);
 
