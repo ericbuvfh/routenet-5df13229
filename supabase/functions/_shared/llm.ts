@@ -41,7 +41,7 @@ export class LlmUnavailableError extends Error {
 
 const DEFAULTS = {
   gatewayModel: "google/gemini-3.6-flash",
-  geminiModel: "gemini-2.5-flash",
+  geminiModel: "gemini-3.6-flash",
   openRouterModel: "google/gemini-2.5-flash",
 };
 
@@ -116,6 +116,9 @@ async function callOpenRouter(o: ChatOptions): Promise<string | null> {
         { role: "system", content: o.system },
         { role: "user", content: o.user },
       ],
+      // Free / low-credit OpenRouter accounts cap the affordable token budget,
+      // so always send an explicit modest max_tokens instead of the model max.
+      max_tokens: Math.min(o.maxOutputTokens ?? 8000, 8000),
       ...(o.temperature != null ? { temperature: o.temperature } : {}),
       ...(o.json === false ? {} : { response_format: { type: "json_object" } }),
     }),
