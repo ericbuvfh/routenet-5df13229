@@ -292,18 +292,40 @@ export default function Search() {
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl px-4 pt-3 pb-3 border-b border-white/5"
+        className="sticky top-0 z-30 bg-muted/25 backdrop-blur-xl px-3 pt-3 pb-3"
       >
-        <h1 className="mb-2 text-xl font-extrabold text-foreground">Search</h1>
-        <motion.div animate={{ scale: isFocused ? 1.01 : 1 }} className="relative">
-          <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-black/60" />
-          <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)}
-            placeholder={isListening ? "Listening..." : "Songs, artists, albums, playlists"}
-            className={`w-full rounded-lg py-2 pl-9 pr-16 text-[13px] font-medium focus:outline-none transition-colors ${isListening ? 'bg-primary/15 text-foreground placeholder:text-white/70' : 'bg-white text-black placeholder:text-black/55'}`} />
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-            {isLoading || loadingYouTube || loadingUnified ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : hasQuery ? <button onClick={clearQuery} className="p-1 text-black/60 hover:text-black"><X className="h-4 w-4" /></button> : null}
+        <div className="flex items-center gap-3">
+          <button
+            aria-label="Go back"
+            onClick={() => (hasQuery ? clearQuery() : navigate(-1))}
+            className="shrink-0 p-1 text-foreground"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </button>
+          <div className="relative flex-1">
+            <input
+              type="text"
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              placeholder={isListening ? "Listening..." : "What do you want to listen to?"}
+              className="w-full bg-transparent py-1 pr-14 text-[17px] font-normal text-foreground placeholder:text-muted-foreground/80 focus:outline-none"
+            />
+            <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-1">
+              {isLoading || loadingYouTube || loadingUnified ? (
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              ) : hasQuery ? (
+                <button onClick={clearQuery} className="p-1 text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
+              ) : speechSupported ? (
+                <button aria-label="Voice search" onClick={toggleVoiceSearch} className="p-1 text-muted-foreground hover:text-foreground">
+                  {isListening ? <MicOff className="h-5 w-5 text-primary" /> : <Mic className="h-5 w-5" />}
+                </button>
+              ) : null}
+            </div>
           </div>
-        </motion.div>
+        </div>
 
 
         <AnimatePresence>
@@ -315,7 +337,8 @@ export default function Search() {
           )}
         </AnimatePresence>
 
-        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="mt-2 flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+        {hasQuery && (
+        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="mt-3 flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
           {filterOptions.map((filter) => (
             <button key={filter.type} onClick={() => setActiveFilter(filter.type)}
               className={`flex items-center gap-1 whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors ${
@@ -325,6 +348,7 @@ export default function Search() {
               }`}>{filter.icon}{filter.label}</button>
           ))}
         </motion.div>
+        )}
 
       </motion.header>
 
