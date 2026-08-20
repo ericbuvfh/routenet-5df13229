@@ -96,3 +96,45 @@ export function isBlockedArtist(name?: string, blocked = getBlockedArtists()): b
   if (!n) return false;
   return blocked.some((b) => n === b || n.includes(b));
 }
+
+/* --------------------------- recent search items --------------------------- */
+
+const RECENT_ITEMS_KEY = "routenet_recent_search_items_v1";
+const MAX_RECENT_ITEMS = 20;
+
+export interface RecentSearchItem {
+  id: string;
+  kind: "track" | "artist" | "album" | "playlist" | "query";
+  title: string;
+  subtitle: string;
+  artwork?: string;
+  explicit?: boolean;
+  /** Query text used to re-run the search when the row is a plain query. */
+  query?: string;
+  ts: number;
+}
+
+export function getRecentSearchItems(): RecentSearchItem[] {
+  try {
+    const arr = JSON.parse(localStorage.getItem(RECENT_ITEMS_KEY) || "[]") as RecentSearchItem[];
+    return Array.isArray(arr) ? arr : [];
+  } catch { return []; }
+}
+
+export function addRecentSearchItem(item: Omit<RecentSearchItem, "ts">) {
+  if (!item.title?.trim()) return;
+  const next = [
+    { ...item, ts: Date.now() },
+    ...getRecentSearchItems().filter((r) => !(r.kind === item.kind && r.id === item.id)),
+  ].slice(0, MAX_RECENT_ITEMS);
+  try { localStorage.setItem(RECENT_ITEMS_KEY, JSON.stringify(next)); } catch { /* quota */ }
+}
+
+export function removeRecentSearchItem(id: string, kind: RecentSearchItem["kind"]) {
+  const next = getRecentSearchItems().filter((r) => !(r.id === id && r.kind === kind));
+  try { localStorage.setItem(RECENT_ITEMS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+}
+
+export function clearRecentSearchItems() {
+  try { localStorage.removeItem(RECENT_ITEMS_KEY); } catch { /* ignore */ }
+}
