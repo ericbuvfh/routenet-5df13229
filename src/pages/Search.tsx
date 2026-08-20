@@ -569,78 +569,79 @@ function MixesResults({ query }: { query: string }) {
     </section>
   );
 }
-
 /* --------------------------------------------------------------- */
-/* Image-9 inspired empty state: voice hero, trending chips, artists grid */
+/* Recent searches — rich rows with artwork, type + artist, remove  */
 /* --------------------------------------------------------------- */
-function SearchEmptyState({
-  setQuery, searchHistory, clearSearchHistory, removeFromSearchHistory,
-  toggleVoiceSearch, isListening, speechSupported, genres,
-}: any) {
+function RecentSearches({ setQuery }: { setQuery: (q: string) => void }) {
   const navigate = useNavigate();
-  const { data: popularArtistsData } = useQuery({
-    queryKey: ["search-popular-artists"],
-    queryFn: async () => {
-      const { data } = await supabase.functions.invoke("deezer", {
-        body: { action: "getChart", params: { type: "artists", limit: 9 } },
-      });
-      return (data?.artists?.data || data?.data || []) as any[];
-    },
-    staleTime: 60 * 60 * 1000,
-  });
+  const [items, setItems] = useState<RecentSearchItem[]>([]);
 
-  const trending = ["Taylor Swift", "Drake", "Billie Eilish", "Lofi Beats", "Afrobeats", "Top 50"];
+  useEffect(() => { setItems(getRecentSearchItems()); }, []);
 
-  // Pull 3 short Piped trending videos for the muted preview row.
-  const { data: shorts } = useQuery({
-    queryKey: ["search-piped-shorts"],
-    queryFn: async () => {
-      try {
-        const res = await fetch("https://pipedapi.kavin.rocks/trending?region=US");
-        const arr: any[] = await res.json();
-        return (arr || [])
-          .filter((v) => v?.duration > 0 && v.duration <= 90 && v?.url)
-          .slice(0, 3)
-          .map((v) => ({
-            id: (v.url || "").split("v=")[1] || v.url,
-            title: v.title,
-            thumb: v.thumbnail,
-          }));
-      } catch { return []; }
-    },
-    staleTime: 30 * 60 * 1000,
-  });
+  const open = (item: RecentSearchItem) => {
+    if (item.kind === "artist") return navigate(`/artist/${encodeURIComponent(item.title)}`);
+    if (item.kind === "album") return navigate(`/album/${item.id.replace("deezer-", "")}`);
+    if (item.kind === "playlist") return navigate(`/user-playlist/${item.id}`);
+    setQuery(item.query || item.title);
+  };
+
+  if (items.length === 0) {
+    return (
+      <div className="pt-16 text-center">
+        <p className="text-sm font-medium text-muted-foreground">Search across songs, artists, albums, playlists and mixes.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4 pt-2">
-      {searchHistory.length > 0 && (
-        <section>
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-foreground">Recent Searches</h2>
-            <button onClick={clearSearchHistory} className="text-[11px] font-semibold text-muted-foreground hover:text-primary">Clear all</button>
-          </div>
-          <div className="space-y-0.5">
-            {searchHistory.map((item: string) => (
-              <div key={item} className="flex items-center justify-between rounded-lg px-2 py-2 hover:bg-white/5 group">
-                <button onClick={() => setQuery(item)} className="flex items-center gap-3 min-w-0 flex-1">
-                  <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  <span className="text-sm text-foreground truncate">{item}</span>
-                </button>
-                <button onClick={() => removeFromSearchHistory(item)} className="p-1 opacity-0 group-hover:opacity-100">
-                  <X className="h-3 w-3 text-muted-foreground" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-      {searchHistory.length === 0 && (
-        <div className="pt-16 text-center">
-          <p className="text-sm font-medium text-muted-foreground">Search across songs, artists, albums, playlists and mixes.</p>
-        </div>
-      )}
-    </div>
+    <div className="pt-2">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-[22px] font-extrabold tracking-tight text-foreground">Recent searches</h2>
+        <button
+          onClick={() => { clearRecentSearchItems(); setItems([]); }}
+          className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
+        >
+          Clear
+        </button>
+      </div>
 
+      <div>
+        {items.map((item, i) => (
+          <motion.div
+            key={`${item.kind}-${item.id}`}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: Math.min(i * 0.03, 0.3) }}
+            className="flex items-center gap-3 py-2"
+          >
+            <button onClick={() => open(item)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+              <div className={`h-[52px] w-[52px] shrink-0 overflow-hidden bg-muted/30 ${item.kind === "artist" ? "rounded-full" : "rounded-[3px]"}`}>
+                {item.artwork ? (
+                  <img src={item.artwork} alt="" loading="lazy" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center"><Music className="h-5 w-5 text-muted-foreground" /></div>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[16px] font-normal leading-tight text-foreground">{item.title}</p>
+                <div className="mt-1 flex items-center gap-1.5">
+                  {item.explicit && (
+                    <span className="rounded-[2px] bg-muted-foreground/70 px-[3px] text-[9px] font-bold leading-[13px] text-background">E</span>
+                  )}
+                  <p className="truncate text-[13px] text-muted-foreground">{item.subtitle}</p>
+                </div>
+              </div>
+            </button>
+            <button
+              aria-label={`Remove ${item.title}`}
+              onClick={() => { removeRecentSearchItem(item.id, item.kind); setItems(getRecentSearchItems()); }}
+              className="shrink-0 p-2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </motion.div>
+        ))}
+      </div>
+    </div>
   );
 }
-
