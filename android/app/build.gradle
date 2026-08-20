@@ -12,33 +12,38 @@ android {
         minSdk = 24
         targetSdk = 35
         versionCode = 1
-        versionName = "1.0.0"
+        versionName = providers.gradleProperty("versionName").orElse("1.0.0").get()
     }
 
     signingConfigs {
         create("release") {
-            storeFile = file("release.keystore")
-            storePassword = "android123"
-            keyAlias = "androidrelease"
-            keyPassword = "android123"
+            def keystorePath = providers.gradleProperty("android.injected.signing.store.file").orNull
+            if (keystorePath != null) {
+                storeFile = file(keystorePath)
+                storePassword = providers.gradleProperty("android.injected.signing.store.password").orNull
+                keyAlias = providers.gradleProperty("android.injected.signing.key.alias").orNull
+                keyPassword = providers.gradleProperty("android.injected.signing.key.password").orNull
+            }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            if (providers.gradleProperty("android.injected.signing.store.file").isPresent()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             minifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = "21"
     }
 
     buildFeatures {
@@ -47,18 +52,15 @@ android {
 }
 
 tasks.register("copyWebApp", Copy) {
-    doFirst {
-        delete(fileTree("src/main/assets/webapp"))
-    }
-
     from("../../dist")
-    into("src/main/assets/webapp")
-    include("**/*")
+    into("src/main/assets/public")
 }
 
 tasks.named("preBuild") {
     dependsOn("copyWebApp")
 }
+
+apply from: "capacitor.build.gradle"
 
 dependencies {
     implementation("androidx.core:core-ktx:1.12.0")

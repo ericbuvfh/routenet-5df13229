@@ -1,0 +1,6 @@
+[
+	{
+		"pkg": "@capgo/native-audio",
+		"classpath": "ee.forgr.audio.NativeAudio"
+	}
+]

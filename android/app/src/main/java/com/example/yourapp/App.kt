@@ -1,4 +1,4 @@
-package com.example.yourapp
+package com.ericbuvfh.tunestream
 
 import android.app.Application
 

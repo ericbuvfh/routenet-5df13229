@@ -26,4 +26,6 @@ dist-ssr
 # Android local signing artifacts
 android/keystore.jks
 android/keystore.properties
+android/app/release.keystore
+android/app/src/main/assets/public
 .dataset-cache/

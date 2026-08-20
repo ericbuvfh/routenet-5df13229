@@ -1,24 +1,25 @@
 # Android wrapper for the web music app
 
 ## Overview
-This project includes a complete Android wrapper that hosts your web app in a WebView and adds a native background playback service powered by Media3 ExoPlayer.
+This project uses Capacitor to package the Vite production build from `dist/`.
+Native playback is provided by the Capacitor NativeAudio plugin.
 
 ## Files added
 - android/ – Android Gradle project
-- android/app/src/main/java/com/example/yourapp/MainActivity.kt – WebView host and JS bridge
+- android/app/src/main/java/com/example/yourapp/MainActivity.kt – Capacitor host
 - android/app/src/main/java/com/example/yourapp/MusicService.kt – background playback service
 - android/app/src/main/java/com/example/yourapp/NotificationHelper.kt – foreground notification
 - android/app/src/main/AndroidManifest.xml – permissions and service declaration
 - .github/workflows/android-release.yml – GitHub Actions release workflow
 
 ## Build locally
-1. Copy your web app into android/app/src/main/assets/webapp/ (or update the WebView loader to point at your existing webapp folder).
-2. Replace package names and app names in the Android project.
-3. From the android folder run:
-   - ./gradlew assembleRelease
+1. Install Node.js 22 and Java 21.
+2. Run `npm ci`, `npm run build`, and `npx cap sync android`.
+3. From the `android` folder run `./gradlew assembleRelease` for a local build,
+  or provide the signing properties shown below.
 
 ## Signing release builds
-Generate a keystore:
+Generate a keystore locally. Do not commit it:
 
 ```bash
 keytool -genkey -v -keystore android/app/keystore.jks -storetype JKS \
@@ -49,3 +50,6 @@ Create a tag like:
 git tag v1.0.0
 git push origin v1.0.0
 ```
+
+The workflow builds the web app, syncs Capacitor, and attaches signed APK and
+AAB artifacts to the GitHub release.

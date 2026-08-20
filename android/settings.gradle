@@ -14,5 +14,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "RouteNet"
+rootProject.name = "TuneStream"
 include(":app")
+apply from: "capacitor.settings.gradle"
