@@ -490,16 +490,7 @@ export default function Search() {
           )}
         </div>
       ) : (
-        <SearchEmptyState
-          setQuery={setQuery}
-          searchHistory={searchHistory}
-          clearSearchHistory={() => { clearSearchHistory(); setSearchHistory([]); }}
-          removeFromSearchHistory={(item) => { removeFromSearchHistory(item); setSearchHistory(getSearchHistory()); }}
-          toggleVoiceSearch={toggleVoiceSearch}
-          isListening={isListening}
-          speechSupported={speechSupported}
-          genres={genres || []}
-        />
+        <RecentSearches setQuery={setQuery} />
       )}
       </div>
       <AddToPlaylistDialog
