@@ -226,6 +226,7 @@ export const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(
     }));
 
     // Create/recreate the YT player instance
+    const createPlayerRef = useRef<((id: string) => void) | null>(null);
     const createPlayer = useCallback((targetVideoId: string) => {
       if (!containerRef.current || !isYTReady()) {
         // API not ready yet — wait for it, then retry once.
@@ -247,7 +248,8 @@ export const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(
 
       currentVideoIdRef.current = targetVideoId;
 
-      playerRef.current = new window.YT.Player(playerId, {
+      try {
+        playerRef.current = new window.YT.Player(playerId, {
         videoId: targetVideoId,
         playerVars: {
           autoplay: 1,
@@ -290,8 +292,13 @@ export const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(
             onErrorRef.current?.();
           },
         },
-      });
+        });
+      } catch (err) {
+        console.warn("[YouTubePlayer] Failed to create player", err);
+        playerRef.current = null;
+      }
     }, [startProgressTracking, stopProgressTracking]);
+    createPlayerRef.current = createPlayer;
 
     // Initialize player ONCE
     useEffect(() => {
