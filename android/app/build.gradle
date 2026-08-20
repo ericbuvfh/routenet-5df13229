@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.yourapp"
+    namespace = "com.ericbuvfh.tunestream"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.yourapp"
+        applicationId = "com.ericbuvfh.tunestream"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
@@ -47,7 +47,11 @@ android {
 }
 
 tasks.register("copyWebApp", Copy) {
-    from("../../webapp")
+    doFirst {
+        delete(fileTree("src/main/assets/webapp"))
+    }
+
+    from("../../dist")
     into("src/main/assets/webapp")
     include("**/*")
 }

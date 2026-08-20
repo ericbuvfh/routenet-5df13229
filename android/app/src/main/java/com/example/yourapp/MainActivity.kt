@@ -1,4 +1,4 @@
-package com.example.yourapp
+package com.ericbuvfh.tunestream
 
 import android.annotation.SuppressLint
 import android.content.ComponentName
@@ -20,8 +20,6 @@ import androidx.core.content.ContextCompat
 import android.Manifest
 import android.content.pm.PackageManager
 import android.widget.Toast
-import java.io.File
-import java.io.FileOutputStream
 
 class MainActivity : AppCompatActivity() {
 
@@ -73,44 +71,7 @@ class MainActivity : AppCompatActivity() {
 
         webView.addJavascriptInterface(WebAppBridge(), "AndroidMusicBridge")
 
-        val assetPath = "file:///android_asset/webapp/index.html"
-        val file = File(filesDir, "webapp/index.html")
-        if (file.exists()) {
-            webView.loadUrl("file://${file.absolutePath}")
-        } else {
-            copyWebAppFromAssets()
-            webView.loadUrl(assetPath)
-        }
-    }
-
-    private fun copyWebAppFromAssets() {
-        val assetManager = assets
-        val webDir = File(filesDir, "webapp")
-        if (!webDir.exists()) webDir.mkdirs()
-        copyAssetFolder(assetManager, "webapp", webDir)
-    }
-
-    private fun copyAssetFolder(assetManager: android.content.res.AssetManager, sourcePath: String, destinationDir: File) {
-        val entries = assetManager.list(sourcePath) ?: return
-        if (entries.isEmpty()) {
-            val inputStream = assetManager.open(sourcePath)
-            val outputFile = File(destinationDir, sourcePath.substringAfterLast('/'))
-            outputFile.parentFile?.mkdirs()
-            val outputStream = FileOutputStream(outputFile)
-            inputStream.copyTo(outputStream)
-            inputStream.close()
-            outputStream.close()
-            return
-        }
-
-        val targetDir = File(destinationDir, sourcePath.substringAfterLast('/'))
-        if (!targetDir.exists()) {
-            targetDir.mkdirs()
-        }
-
-        for (entry in entries) {
-            copyAssetFolder(assetManager, "$sourcePath/$entry", targetDir)
-        }
+        webView.loadUrl("file:///android_asset/webapp/index.html")
     }
 
     private fun requestPermissionsIfNeeded() {
