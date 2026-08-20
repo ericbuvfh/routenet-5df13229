@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search as SearchIcon, Mic, MicOff, X, Loader2, Clock, User, Music, Disc, Radio, Play, MoreVertical, Plus, Download, ListPlus } from "lucide-react";
+import { Search as SearchIcon, Mic, MicOff, X, Loader2, Clock, User, Music, Disc, Radio, Play, MoreVertical, Plus, Download, ListPlus, ArrowLeft } from "lucide-react";
 import { AddToPlaylistDialog } from "@/components/AddToPlaylistDialog";
 
 import { TrackCard } from "@/components/cards/TrackCard";
@@ -17,7 +17,11 @@ import { useQuery } from "@tanstack/react-query";
 import { getUserPlaylists } from "@/services/playlistService";
 import { getCombinedScore } from "@/lib/balancedPlaylist";
 import { supabase } from "@/integrations/supabase/client";
-import { readSearchCache, writeSearchCache, isBlockedArtist, getBlockedArtists, blockArtist } from "@/services/searchCache";
+import {
+  readSearchCache, writeSearchCache, isBlockedArtist, getBlockedArtists, blockArtist,
+  getRecentSearchItems, addRecentSearchItem, removeRecentSearchItem, clearRecentSearchItems,
+  type RecentSearchItem,
+} from "@/services/searchCache";
 
 const SEARCH_HISTORY_KEY = 'echotunes_search_history';
 const MAX_HISTORY = 10;
@@ -256,6 +260,12 @@ export default function Search() {
     if (debouncedQuery.length < 2) return;
     if (!liveTracks.length && !liveArtists.length && !liveAlbums.length) return;
     writeSearchCache(debouncedQuery, { tracks: liveTracks, artists: liveArtists, albums: liveAlbums });
+    const top = liveTracks[0];
+    addRecentSearchItem({
+      id: debouncedQuery.toLowerCase(), kind: "query", title: debouncedQuery,
+      subtitle: top ? `Song • ${top.artist}` : "Search",
+      artwork: top?.artwork, query: debouncedQuery,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedQuery, liveTracks.length, liveArtists.length, liveAlbums.length]);
 
@@ -288,18 +298,40 @@ export default function Search() {
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl px-4 pt-3 pb-3 border-b border-white/5"
+        className="sticky top-0 z-30 bg-muted/25 backdrop-blur-xl px-3 pt-3 pb-3"
       >
-        <h1 className="mb-2 text-xl font-extrabold text-foreground">Search</h1>
-        <motion.div animate={{ scale: isFocused ? 1.01 : 1 }} className="relative">
-          <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-black/60" />
-          <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)}
-            placeholder={isListening ? "Listening..." : "Songs, artists, albums, playlists"}
-            className={`w-full rounded-lg py-2 pl-9 pr-16 text-[13px] font-medium focus:outline-none transition-colors ${isListening ? 'bg-primary/15 text-foreground placeholder:text-white/70' : 'bg-white text-black placeholder:text-black/55'}`} />
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-            {isLoading || loadingYouTube || loadingUnified ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : hasQuery ? <button onClick={clearQuery} className="p-1 text-black/60 hover:text-black"><X className="h-4 w-4" /></button> : null}
+        <div className="flex items-center gap-3">
+          <button
+            aria-label="Go back"
+            onClick={() => (hasQuery ? clearQuery() : navigate(-1))}
+            className="shrink-0 p-1 text-foreground"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </button>
+          <div className="relative flex-1">
+            <input
+              type="text"
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              placeholder={isListening ? "Listening..." : "What do you want to listen to?"}
+              className="w-full bg-transparent py-1 pr-14 text-[17px] font-normal text-foreground placeholder:text-muted-foreground/80 focus:outline-none"
+            />
+            <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-1">
+              {isLoading || loadingYouTube || loadingUnified ? (
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              ) : hasQuery ? (
+                <button onClick={clearQuery} className="p-1 text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
+              ) : speechSupported ? (
+                <button aria-label="Voice search" onClick={toggleVoiceSearch} className="p-1 text-muted-foreground hover:text-foreground">
+                  {isListening ? <MicOff className="h-5 w-5 text-primary" /> : <Mic className="h-5 w-5" />}
+                </button>
+              ) : null}
+            </div>
           </div>
-        </motion.div>
+        </div>
 
 
         <AnimatePresence>
@@ -311,7 +343,8 @@ export default function Search() {
           )}
         </AnimatePresence>
 
-        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="mt-2 flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+        {hasQuery && (
+        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="mt-3 flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
           {filterOptions.map((filter) => (
             <button key={filter.type} onClick={() => setActiveFilter(filter.type)}
               className={`flex items-center gap-1 whitespace-nowrap rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors ${
@@ -321,6 +354,7 @@ export default function Search() {
               }`}>{filter.icon}{filter.label}</button>
           ))}
         </motion.div>
+        )}
 
       </motion.header>
 
@@ -343,6 +377,11 @@ export default function Search() {
                       <motion.div key={`tr-${t.id}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
                         className="group flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-2 cursor-pointer hover:border-primary/30 hover:bg-white/[0.07] active:scale-[0.99] transition-all"
                         onClick={() => {
+                          addRecentSearchItem({
+                            id: String(t.id), kind: "track", title: t.title,
+                            subtitle: `Song • ${t.artist}`, artwork: t.artwork,
+                            explicit: !!(t as any).explicit, query: t.title,
+                          });
                           playTrack(t, filteredTracks);
                         }}>
                         <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl">
@@ -383,7 +422,10 @@ export default function Search() {
                     return (
                       <motion.div key={`ar-${a.id}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
                         className="flex items-center gap-3 rounded-lg p-2 cursor-pointer hover:bg-white/10 active:bg-white/15 transition-colors"
-                        onClick={() => navigate(`/artist/${encodeURIComponent(a.name)}`)}>
+                        onClick={() => {
+                          addRecentSearchItem({ id: String(a.id), kind: "artist", title: a.name, subtitle: "Artist", artwork: a.avatar, query: a.name });
+                          navigate(`/artist/${encodeURIComponent(a.name)}`);
+                        }}>
                         <img src={a.avatar} alt="" className="h-12 w-12 rounded-full object-cover flex-shrink-0" />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-semibold text-foreground">{a.name}</p>
@@ -397,7 +439,10 @@ export default function Search() {
                     return (
                       <motion.div key={`pl-${p.id}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
                         className="flex items-center gap-3 rounded-lg p-2 cursor-pointer hover:bg-white/10 active:bg-white/15 transition-colors"
-                        onClick={() => navigate(`/user-playlist/${p.id}`)}>
+                        onClick={() => {
+                          addRecentSearchItem({ id: String(p.id), kind: "playlist", title: p.name, subtitle: "Playlist", artwork: p.cover_image || undefined, query: p.name });
+                          navigate(`/user-playlist/${p.id}`);
+                        }}>
                         <div className="h-12 w-12 rounded-lg bg-muted/30 overflow-hidden flex-shrink-0">
                           {p.cover_image ? <img src={p.cover_image} alt="" className="h-full w-full object-cover" /> : <Music className="h-5 w-5 text-muted-foreground m-auto mt-3.5" />}
                         </div>
@@ -436,6 +481,7 @@ export default function Search() {
               <div className="space-y-1">{filteredAlbums.map((a, i) => (
                 <motion.div key={a.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
                   className="flex items-center gap-3 rounded-lg p-2 cursor-pointer hover:bg-white/10" onClick={() => navigate(`/album/${a.id.toString().replace("deezer-", "")}`)}>
+                  {/* album row */}
                   <img src={a.artwork} alt="" className="h-12 w-12 rounded-lg object-cover flex-shrink-0" />
                   <div><p className="text-sm font-semibold text-foreground">{a.title}</p><p className="text-xs text-muted-foreground">Album • {a.artist}</p></div>
                 </motion.div>
@@ -450,16 +496,7 @@ export default function Search() {
           )}
         </div>
       ) : (
-        <SearchEmptyState
-          setQuery={setQuery}
-          searchHistory={searchHistory}
-          clearSearchHistory={() => { clearSearchHistory(); setSearchHistory([]); }}
-          removeFromSearchHistory={(item) => { removeFromSearchHistory(item); setSearchHistory(getSearchHistory()); }}
-          toggleVoiceSearch={toggleVoiceSearch}
-          isListening={isListening}
-          speechSupported={speechSupported}
-          genres={genres || []}
-        />
+        <RecentSearches setQuery={setQuery} />
       )}
       </div>
       <AddToPlaylistDialog
@@ -538,78 +575,79 @@ function MixesResults({ query }: { query: string }) {
     </section>
   );
 }
-
 /* --------------------------------------------------------------- */
-/* Image-9 inspired empty state: voice hero, trending chips, artists grid */
+/* Recent searches — rich rows with artwork, type + artist, remove  */
 /* --------------------------------------------------------------- */
-function SearchEmptyState({
-  setQuery, searchHistory, clearSearchHistory, removeFromSearchHistory,
-  toggleVoiceSearch, isListening, speechSupported, genres,
-}: any) {
+function RecentSearches({ setQuery }: { setQuery: (q: string) => void }) {
   const navigate = useNavigate();
-  const { data: popularArtistsData } = useQuery({
-    queryKey: ["search-popular-artists"],
-    queryFn: async () => {
-      const { data } = await supabase.functions.invoke("deezer", {
-        body: { action: "getChart", params: { type: "artists", limit: 9 } },
-      });
-      return (data?.artists?.data || data?.data || []) as any[];
-    },
-    staleTime: 60 * 60 * 1000,
-  });
+  const [items, setItems] = useState<RecentSearchItem[]>([]);
 
-  const trending = ["Taylor Swift", "Drake", "Billie Eilish", "Lofi Beats", "Afrobeats", "Top 50"];
+  useEffect(() => { setItems(getRecentSearchItems()); }, []);
 
-  // Pull 3 short Piped trending videos for the muted preview row.
-  const { data: shorts } = useQuery({
-    queryKey: ["search-piped-shorts"],
-    queryFn: async () => {
-      try {
-        const res = await fetch("https://pipedapi.kavin.rocks/trending?region=US");
-        const arr: any[] = await res.json();
-        return (arr || [])
-          .filter((v) => v?.duration > 0 && v.duration <= 90 && v?.url)
-          .slice(0, 3)
-          .map((v) => ({
-            id: (v.url || "").split("v=")[1] || v.url,
-            title: v.title,
-            thumb: v.thumbnail,
-          }));
-      } catch { return []; }
-    },
-    staleTime: 30 * 60 * 1000,
-  });
+  const open = (item: RecentSearchItem) => {
+    if (item.kind === "artist") return navigate(`/artist/${encodeURIComponent(item.title)}`);
+    if (item.kind === "album") return navigate(`/album/${item.id.replace("deezer-", "")}`);
+    if (item.kind === "playlist") return navigate(`/user-playlist/${item.id}`);
+    setQuery(item.query || item.title);
+  };
+
+  if (items.length === 0) {
+    return (
+      <div className="pt-16 text-center">
+        <p className="text-sm font-medium text-muted-foreground">Search across songs, artists, albums, playlists and mixes.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4 pt-2">
-      {searchHistory.length > 0 && (
-        <section>
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-foreground">Recent Searches</h2>
-            <button onClick={clearSearchHistory} className="text-[11px] font-semibold text-muted-foreground hover:text-primary">Clear all</button>
-          </div>
-          <div className="space-y-0.5">
-            {searchHistory.map((item: string) => (
-              <div key={item} className="flex items-center justify-between rounded-lg px-2 py-2 hover:bg-white/5 group">
-                <button onClick={() => setQuery(item)} className="flex items-center gap-3 min-w-0 flex-1">
-                  <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  <span className="text-sm text-foreground truncate">{item}</span>
-                </button>
-                <button onClick={() => removeFromSearchHistory(item)} className="p-1 opacity-0 group-hover:opacity-100">
-                  <X className="h-3 w-3 text-muted-foreground" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-      {searchHistory.length === 0 && (
-        <div className="pt-16 text-center">
-          <p className="text-sm font-medium text-muted-foreground">Search across songs, artists, albums, playlists and mixes.</p>
-        </div>
-      )}
-    </div>
+    <div className="pt-2">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-[22px] font-extrabold tracking-tight text-foreground">Recent searches</h2>
+        <button
+          onClick={() => { clearRecentSearchItems(); setItems([]); }}
+          className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
+        >
+          Clear
+        </button>
+      </div>
 
+      <div>
+        {items.map((item, i) => (
+          <motion.div
+            key={`${item.kind}-${item.id}`}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: Math.min(i * 0.03, 0.3) }}
+            className="flex items-center gap-3 py-2"
+          >
+            <button onClick={() => open(item)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+              <div className={`h-[52px] w-[52px] shrink-0 overflow-hidden bg-muted/30 ${item.kind === "artist" ? "rounded-full" : "rounded-[3px]"}`}>
+                {item.artwork ? (
+                  <img src={item.artwork} alt="" loading="lazy" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center"><Music className="h-5 w-5 text-muted-foreground" /></div>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[16px] font-normal leading-tight text-foreground">{item.title}</p>
+                <div className="mt-1 flex items-center gap-1.5">
+                  {item.explicit && (
+                    <span className="rounded-[2px] bg-muted-foreground/70 px-[3px] text-[9px] font-bold leading-[13px] text-background">E</span>
+                  )}
+                  <p className="truncate text-[13px] text-muted-foreground">{item.subtitle}</p>
+                </div>
+              </div>
+            </button>
+            <button
+              aria-label={`Remove ${item.title}`}
+              onClick={() => { removeRecentSearchItem(item.id, item.kind); setItems(getRecentSearchItems()); }}
+              className="shrink-0 p-2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </motion.div>
+        ))}
+      </div>
+    </div>
   );
 }
-

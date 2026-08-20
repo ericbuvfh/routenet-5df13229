@@ -34,7 +34,7 @@ async function callViaGeminiDirect(systemPrompt: string, userPrompt: string): Pr
   if (!KEY) return null;
   try {
     const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -85,6 +85,8 @@ async function callViaOpenRouter(systemPrompt: string, userPrompt: string): Prom
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
+        // Keep the token budget affordable on free/low-credit OpenRouter keys.
+        max_tokens: 8000,
         response_format: { type: "json_object" },
       }),
     });
