@@ -371,6 +371,11 @@ export default function Search() {
                       <motion.div key={`tr-${t.id}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
                         className="group flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-2 cursor-pointer hover:border-primary/30 hover:bg-white/[0.07] active:scale-[0.99] transition-all"
                         onClick={() => {
+                          addRecentSearchItem({
+                            id: String(t.id), kind: "track", title: t.title,
+                            subtitle: `Song • ${t.artist}`, artwork: t.artwork,
+                            explicit: !!(t as any).explicit, query: t.title,
+                          });
                           playTrack(t, filteredTracks);
                         }}>
                         <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl">
@@ -411,7 +416,10 @@ export default function Search() {
                     return (
                       <motion.div key={`ar-${a.id}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
                         className="flex items-center gap-3 rounded-lg p-2 cursor-pointer hover:bg-white/10 active:bg-white/15 transition-colors"
-                        onClick={() => navigate(`/artist/${encodeURIComponent(a.name)}`)}>
+                        onClick={() => {
+                          addRecentSearchItem({ id: String(a.id), kind: "artist", title: a.name, subtitle: "Artist", artwork: a.avatar, query: a.name });
+                          navigate(`/artist/${encodeURIComponent(a.name)}`);
+                        }}>
                         <img src={a.avatar} alt="" className="h-12 w-12 rounded-full object-cover flex-shrink-0" />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-semibold text-foreground">{a.name}</p>
@@ -425,7 +433,10 @@ export default function Search() {
                     return (
                       <motion.div key={`pl-${p.id}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
                         className="flex items-center gap-3 rounded-lg p-2 cursor-pointer hover:bg-white/10 active:bg-white/15 transition-colors"
-                        onClick={() => navigate(`/user-playlist/${p.id}`)}>
+                        onClick={() => {
+                          addRecentSearchItem({ id: String(p.id), kind: "playlist", title: p.name, subtitle: "Playlist", artwork: p.cover_image || undefined, query: p.name });
+                          navigate(`/user-playlist/${p.id}`);
+                        }}>
                         <div className="h-12 w-12 rounded-lg bg-muted/30 overflow-hidden flex-shrink-0">
                           {p.cover_image ? <img src={p.cover_image} alt="" className="h-full w-full object-cover" /> : <Music className="h-5 w-5 text-muted-foreground m-auto mt-3.5" />}
                         </div>
