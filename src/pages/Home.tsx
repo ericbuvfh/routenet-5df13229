@@ -18,6 +18,13 @@ import { supabase } from "@/integrations/supabase/client";
 const INITIAL_BATCH = 6;
 const BATCH_SIZE = 4;
 
+// Module-level so it survives unmount/remount on navigation.
+const persisted: { filter: HomeFilter; visibleCount: number; scrollTop: number } = {
+  filter: "all",
+  visibleCount: INITIAL_BATCH,
+  scrollTop: 0,
+};
+
 function useUserSeed(): string {
   const [seed, setSeed] = useState<string>("anon");
   useEffect(() => {
@@ -70,9 +77,26 @@ export default function Home() {
     [followedArtists, followedGenres, seedKey, userSeed],
   );
 
-  const [filter, setFilter] = useState<HomeFilter>("all");
-  const [visibleCount, setVisibleCount] = useState(INITIAL_BATCH);
+  const [filter, setFilter] = useState<HomeFilter>(persisted.filter);
+  const [visibleCount, setVisibleCount] = useState(persisted.visibleCount);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Keep feed depth, filter and scroll offset across navigation so returning
+  // to Home restores the exact previous view instead of rebuilding it.
+  useEffect(() => {
+    persisted.filter = filter;
+    persisted.visibleCount = visibleCount;
+  }, [filter, visibleCount]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (persisted.scrollTop > 0) el.scrollTop = persisted.scrollTop;
+    const onScroll = () => { persisted.scrollTop = el.scrollTop; };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
@@ -130,7 +154,7 @@ export default function Home() {
   const visibleSections = filteredSections.slice(0, visibleCount);
 
   return (
-    <div className="custom-scrollbar relative min-h-screen overflow-y-auto pb-28">
+    <div ref={scrollRef} className="custom-scrollbar relative min-h-screen overflow-y-auto pb-28">
       <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl">
         <div className="px-4 pb-3 pt-9">
           <HomeFilterPills value={filter} onChange={setFilter} />

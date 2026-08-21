@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { SectionDescriptor, SectionResult } from "@/services/homeFeedEngine";
 import type { Track } from "@/data/mockData";
+import { cached, peekCached } from "@/services/homeCache";
 import { SongCard, AlbumCard, PlaylistCard, ArtistCard, CardSkeleton, SongListRow, SongListColumn, MusicVideoCard, MusicVideoListItem, VideoListColumn, ListSkeleton, VideoSkeleton } from "./cards/UnifiedCards";
 
 interface Props {
@@ -9,11 +10,29 @@ interface Props {
   onPlay: (track: Track, source: Track[]) => void;
 }
 
+// Sections stay warm for 6 hours so navigating away and back never refetches.
+const SECTION_TTL = 6 * 60 * 60 * 1000;
+
+function countItems(res: SectionResult) {
+  return (
+    (res.songs?.length ?? 0) +
+    (res.albums?.length ?? 0) +
+    (res.playlists?.length ?? 0) +
+    (res.artists?.length ?? 0) +
+    (res.videos?.length ?? 0)
+  );
+}
+
 export function HomeSectionRow({ section, onPlay }: Props) {
   const navigate = useNavigate();
   const ref = useRef<HTMLDivElement | null>(null);
-  const [data, setData] = useState<SectionResult | null>(null);
-  const [state, setState] = useState<"idle" | "loading" | "loaded" | "empty">("idle");
+  const cacheKey = `section:${section.id}`;
+  // Cached sections render instantly on every re-entry — no skeleton flash.
+  const initial = peekCached<SectionResult>(cacheKey);
+  const [data, setData] = useState<SectionResult | null>(initial);
+  const [state, setState] = useState<"idle" | "loading" | "loaded" | "empty">(
+    initial ? (countItems(initial) > 0 ? "loaded" : "empty") : "idle",
+  );
 
   useEffect(() => {
     if (!ref.current || state !== "idle") return;
@@ -22,23 +41,18 @@ export function HomeSectionRow({ section, onPlay }: Props) {
       if (entries.some((e) => e.isIntersecting)) {
         io.disconnect();
         setState("loading");
-        section.load()
+        cached<SectionResult>(cacheKey, SECTION_TTL, () => section.load())
           .then((res) => {
-            const count =
-              (res.songs?.length ?? 0) +
-              (res.albums?.length ?? 0) +
-              (res.playlists?.length ?? 0) +
-              (res.artists?.length ?? 0) +
-              (res.videos?.length ?? 0);
             setData(res);
-            setState(count > 0 ? "loaded" : "empty");
+            setState(countItems(res) > 0 ? "loaded" : "empty");
           })
           .catch(() => setState("empty"));
       }
     }, { rootMargin: "400px 0px" });
     io.observe(el);
     return () => io.disconnect();
-  }, [section, state]);
+  }, [section, state, cacheKey]);
+
 
   const isArtistKind = section.kind === "artists";
 
