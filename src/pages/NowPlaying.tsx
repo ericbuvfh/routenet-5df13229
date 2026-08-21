@@ -152,13 +152,13 @@ export default function NowPlaying() {
         </Button>
       </header>
 
-      {/* Square artwork */}
+      {/* Circular artwork */}
       <section className="relative z-10 flex min-h-0 flex-1 items-center justify-center px-6 py-4">
         <motion.div
           initial={{ scale: 0.96, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 200, damping: 24 }}
-          className="aspect-square w-[min(86vw,52dvh,420px)] overflow-hidden rounded-xl bg-card album-shadow"
+          className="aspect-square w-[min(86vw,52dvh,420px)] overflow-hidden rounded-full bg-card album-shadow"
         >
           {isResolving ? (
             <div className="flex h-full w-full items-center justify-center bg-secondary">
