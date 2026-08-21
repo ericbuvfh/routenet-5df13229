@@ -7,9 +7,18 @@ import type { Track } from "@/data/mockData";
  * Responsive card width — roughly 2 cards on phones, 3 on tablets and
  * 4 on desktop, with a small peek so the row reads as scrollable.
  */
-const CARD_W = "w-[40vw] sm:w-[27vw] md:w-[21vw] lg:w-[17vw] max-w-[210px]";
-const ART = "overflow-hidden rounded-[6px] bg-[hsl(0_0%_16%)] shadow-[0_8px_24px_hsl(0_0%_0%_/_0.45)] transition-shadow duration-300 group-hover:shadow-[0_14px_34px_hsl(0_0%_0%_/_0.6)]";
-const IMG = "h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]";
+const CARD_W = "w-[41vw] sm:w-[27vw] md:w-[21vw] lg:w-[17vw] max-w-[200px]";
+/** Premium Spotify-grade artwork frame: soft graphite base, deep drop shadow. */
+const ART =
+  "overflow-hidden rounded-[8px] bg-[hsl(0_0%_14%)] shadow-[0_10px_28px_-8px_hsl(0_0%_0%_/_0.75)] ring-1 ring-white/[0.06] transition-all duration-300 group-hover:shadow-[0_18px_40px_-10px_hsl(0_0%_0%_/_0.9)] group-hover:ring-white/[0.12]";
+const IMG = "h-full w-full object-cover transition-transform duration-[600ms] ease-out group-hover:scale-[1.06]";
+/** Circular green play affordance shared by every card. */
+const PLAY_FAB =
+  "absolute bottom-2 right-2 flex h-11 w-11 translate-y-2 items-center justify-center rounded-full bg-primary text-primary-foreground opacity-0 shadow-[0_8px_18px_-4px_hsl(0_0%_0%_/_0.8)] transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100";
+const CARD_BTN = "group shrink-0 snap-start text-left transition-transform duration-300 active:scale-[0.97]";
+const TITLE = "mt-2.5 line-clamp-1 text-[14px] font-bold leading-tight tracking-[-0.01em] text-foreground";
+const SUB = "mt-1 line-clamp-2 text-[12px] font-medium leading-snug text-muted-foreground";
+
 
 function fmtDuration(seconds?: number) {
   if (!seconds || seconds <= 0) return "";
@@ -185,16 +194,16 @@ export function VideoSkeleton() {
 
 export function SongCard({ track, onClick }: { track: Track; onClick: () => void }) {
   return (
-    <button onClick={onClick} className={cn("group shrink-0 snap-start text-left active:scale-[0.97] transition-transform", CARD_W)}>
+    <button onClick={onClick} className={cn(CARD_BTN, CARD_W)}>
       <div className={cn("relative aspect-square", ART)}>
         <img src={track.artwork} alt={track.title} loading="lazy" decoding="async" className={IMG} />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-        <div className="absolute bottom-2 right-2 flex h-10 w-10 translate-y-2 items-center justify-center rounded-full bg-primary text-primary-foreground opacity-0 shadow-lg transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-          <Play className="ml-0.5 h-4 w-4" fill="currentColor" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <div className={PLAY_FAB}>
+          <Play className="ml-0.5 h-[18px] w-[18px]" fill="currentColor" />
         </div>
       </div>
-      <p className="mt-2 line-clamp-1 text-[14px] font-semibold text-foreground">{toTitleCase(track.title)}</p>
-      <p className="line-clamp-1 text-[12px] font-normal text-muted-foreground">{toTitleCase(track.artist)}</p>
+      <p className={TITLE}>{toTitleCase(track.title)}</p>
+      <p className={cn(SUB, "line-clamp-1")}>{toTitleCase(track.artist)}</p>
     </button>
   );
 }
@@ -204,31 +213,39 @@ export function AlbumCard({ album, onClick }: {
   onClick: () => void;
 }) {
   return (
-    <button onClick={onClick} className={cn("group shrink-0 snap-start text-left active:scale-[0.97] transition-transform", CARD_W)}>
-      <div className={cn("aspect-square", ART)}>
+    <button onClick={onClick} className={cn(CARD_BTN, CARD_W)}>
+      <div className={cn("relative aspect-square", ART)}>
         {album.cover
           ? <img src={album.cover} alt={album.title} loading="lazy" decoding="async" className={IMG} />
           : <div className="h-full w-full bg-secondary" />}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <div className={PLAY_FAB}>
+          <Play className="ml-0.5 h-[18px] w-[18px]" fill="currentColor" />
+        </div>
       </div>
-      <p className="mt-2 line-clamp-1 text-[14px] font-semibold text-foreground">{toTitleCase(album.title)}</p>
-      <p className="line-clamp-1 text-[12px] font-normal text-muted-foreground">{toTitleCase(album.artist)}</p>
+      <p className={TITLE}>{toTitleCase(album.title)}</p>
+      <p className={cn(SUB, "line-clamp-1")}>{toTitleCase(album.artist)}</p>
     </button>
   );
 }
 
 export function PlaylistCard({ playlist, onClick }: {
-  playlist: { id: string | number; title: string; cover: string; creator?: string };
+  playlist: { id: string | number; title: string; cover: string; creator?: string; description?: string };
   onClick: () => void;
 }) {
   return (
-    <button onClick={onClick} className={cn("group shrink-0 snap-start text-left active:scale-[0.97] transition-transform", CARD_W)}>
-      <div className={cn("aspect-square", ART)}>
+    <button onClick={onClick} className={cn(CARD_BTN, CARD_W)}>
+      <div className={cn("relative aspect-square", ART)}>
         {playlist.cover
           ? <img src={playlist.cover} alt={playlist.title} loading="lazy" decoding="async" className={IMG} />
           : <div className="h-full w-full bg-secondary" />}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <div className={PLAY_FAB}>
+          <Play className="ml-0.5 h-[18px] w-[18px]" fill="currentColor" />
+        </div>
       </div>
-      <p className="mt-2 line-clamp-2 text-[14px] font-semibold leading-snug text-foreground">{playlist.title}</p>
-      <p className="line-clamp-1 text-[12px] font-normal text-muted-foreground">{playlist.creator || "Playlist"}</p>
+      <p className={cn(TITLE, "line-clamp-2")}>{playlist.title}</p>
+      <p className={SUB}>{playlist.description || playlist.creator || "Playlist"}</p>
     </button>
   );
 }
@@ -238,14 +255,14 @@ export function ArtistCard({ artist, onClick }: {
   onClick: () => void;
 }) {
   return (
-    <button onClick={onClick} className={cn("group shrink-0 snap-start text-center active:scale-[0.97] transition-transform", CARD_W)}>
-      <div className="mx-auto aspect-square w-full overflow-hidden rounded-full bg-card ring-1 ring-border/40 transition-all duration-300 group-hover:ring-primary/40">
+    <button onClick={onClick} className={cn(CARD_BTN, "text-center", CARD_W)}>
+      <div className="relative mx-auto aspect-square w-full overflow-hidden rounded-full bg-[hsl(0_0%_14%)] shadow-[0_10px_28px_-8px_hsl(0_0%_0%_/_0.75)] ring-1 ring-white/[0.06] transition-all duration-300 group-hover:ring-primary/50">
         {artist.picture
           ? <img src={artist.picture} alt={artist.name} loading="lazy" decoding="async" className={IMG} />
           : <div className="h-full w-full bg-secondary" />}
       </div>
-      <p className="mt-2 line-clamp-1 text-[14px] font-semibold text-foreground">{toTitleCase(artist.name)}</p>
-      <p className="line-clamp-1 text-[12px] font-normal text-muted-foreground">Artist</p>
+      <p className={TITLE}>{toTitleCase(artist.name)}</p>
+      <p className={cn(SUB, "line-clamp-1")}>Artist</p>
     </button>
   );
 }
@@ -253,9 +270,10 @@ export function ArtistCard({ artist, onClick }: {
 export function CardSkeleton({ round = false }: { round?: boolean }) {
   return (
     <div className={cn("shrink-0", CARD_W)}>
-      <div className={cn("aspect-square animate-pulse bg-secondary/60", round ? "rounded-full" : "rounded-2xl")} />
+      <div className={cn("aspect-square animate-pulse bg-secondary/60", round ? "rounded-full" : "rounded-[8px]")} />
       <div className="mt-2.5 h-3 w-3/4 animate-pulse rounded bg-secondary/60" />
       <div className="mt-1.5 h-3 w-1/2 animate-pulse rounded bg-secondary/40" />
     </div>
   );
 }
+

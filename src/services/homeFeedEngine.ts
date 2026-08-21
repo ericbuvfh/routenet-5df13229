@@ -654,11 +654,76 @@ function interleave(sections: SectionDescriptor[]): SectionDescriptor[] {
   return out;
 }
 
+/* ------------------------------------------------------------------ */
+/* Real Deezer playlist rows                                           */
+/* ------------------------------------------------------------------ */
+
+/** A playlist row backed by live Deezer data (chart playlists + search). */
+const deezerPlaylistRow = (
+  query: string,
+  genreId: number | string | null,
+  limit = 20,
+) => async (): Promise<SectionResult> => {
+  const lists: any[][] = [];
+  if (genreId !== null) lists.push(await getGenreChartPlaylists(genreId, limit));
+  lists.push(await searchPlaylists(query, limit));
+  let rows = roundRobin(lists.filter((l) => l.length), limit + 6);
+  if (rows.length < 4) rows = await searchPlaylists("top hits playlist", limit);
+  const seen = new Set<string>();
+  const out = rows
+    .map(transformPlaylist)
+    .filter((p: any) => {
+      const k = String(p.id);
+      if (!p.title || !p.cover || seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  return { playlists: out.slice(0, limit) };
+};
+
+/** Five always-on rows of real Deezer playlists. */
+function deezerPlaylistSections(input: FeedInput): SectionDescriptor[] {
+  const g = input.followedGenres;
+  const g1 = g[0]?.name || "";
+  const g2 = g[1]?.name || g1;
+  return [
+    { id: "dzpl-editorial", title: "Deezer Editorial Playlists", subtitle: "Curated by Deezer", kind: "playlists",
+      load: deezerPlaylistRow("deezer editorial hits", 0, 20) },
+    { id: "dzpl-charts", title: "Playlists In The Charts", subtitle: "What the world is streaming", kind: "playlists",
+      load: deezerPlaylistRow("top charts playlist", 0, 20) },
+    { id: "dzpl-genre", title: g1 ? `${g1} Playlists` : "Playlists For Your Taste", kind: "playlists",
+      load: deezerPlaylistRow(`${g1 || "popular"} playlist`, g[0]?.id ?? 0, 20) },
+    { id: "dzpl-mood", title: "Mood Playlists", subtitle: "Chill, focus, party — pick a feeling", kind: "playlists",
+      load: deezerPlaylistRow(`${g2 ? g2 + " " : ""}mood playlist`, null, 20) },
+    { id: "dzpl-workout", title: "Playlists To Move To", subtitle: "Workout and energy boosters", kind: "playlists",
+      load: deezerPlaylistRow("workout energy playlist", null, 20) },
+  ] as SectionDescriptor[];
+}
+
+/**
+ * Music-video rows are held back until the listener has scrolled through the
+ * first ~3 batches of the feed, then spaced out every few rows.
+ */
+const VIDEO_START_INDEX = 14;
+const VIDEO_SPACING = 7;
+
+function deferVideos(sections: SectionDescriptor[]): SectionDescriptor[] {
+  const vids = sections.filter((s) => s.kind === "videos");
+  const rest = sections.filter((s) => s.kind !== "videos");
+  const out = rest.slice();
+  vids.forEach((v, i) => {
+    const at = VIDEO_START_INDEX + i * VIDEO_SPACING;
+    if (at >= out.length) out.push(v);
+    else out.splice(at, 0, v);
+  });
+  return out;
+}
+
 export function buildFeed(input: FeedInput, userSeed = "anon"): SectionDescriptor[] {
   const day = Math.floor(Date.now() / (24 * 60 * 60 * 1000));
   const seed = hash(userSeed + ":" + day + ":" + input.followedArtists.join("|"));
   const global = seededShuffle(
-    [...globalSections(input), ...personalizedDeezerSections(input)],
+    [...globalSections(input), ...personalizedDeezerSections(input), ...deezerPlaylistSections(input)],
     seed,
   );
   const perArtist = seededShuffle(artistSections(input.followedArtists), seed ^ 0x9e3779b9);
@@ -666,6 +731,7 @@ export function buildFeed(input: FeedInput, userSeed = "anon"): SectionDescripto
   // Made For You + Top Picks always sit directly under the quick-access grid.
   const pinned = pinnedSections(input);
   const pinnedIds = new Set(pinned.map((s) => s.id));
-  return [...pinned, ...mixed.filter((s) => !pinnedIds.has(s.id))];
+  return deferVideos([...pinned, ...mixed.filter((s) => !pinnedIds.has(s.id))]);
 }
+
 

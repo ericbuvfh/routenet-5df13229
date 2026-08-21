@@ -368,14 +368,14 @@ export default function Search() {
 
           {activeFilter === 'all' && topItems.length > 0 && (
             <section>
-              <h2 className="mb-2 text-base font-bold text-foreground">Top Results</h2>
-              <div className="space-y-1.5">
+              <h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Top results</h2>
+              <div>
                 {topItems.map((entry, i) => {
                   if (entry.type === 'track') {
                     const t = entry.item as Track;
                     return (
                       <motion.div key={`tr-${t.id}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                        className="group flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-2 cursor-pointer hover:border-primary/30 hover:bg-white/[0.07] active:scale-[0.99] transition-all"
+                        className="group flex cursor-pointer items-center gap-3 py-2 transition-colors"
                         onClick={() => {
                           addRecentSearchItem({
                             id: String(t.id), kind: "track", title: t.title,
@@ -384,27 +384,23 @@ export default function Search() {
                           });
                           playTrack(t, filteredTracks);
                         }}>
-                        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl">
+                        <div className="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-[3px] bg-muted/30">
                           <img src={t.artwork} alt="" loading="lazy" className="h-full w-full object-cover" />
                           <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                            <Play className="h-6 w-6 text-white" fill="currentColor" />
+                            <Play className="h-5 w-5 text-white" fill="currentColor" />
                           </div>
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5">
-                            <p className="truncate text-[15px] font-bold leading-tight text-foreground">{t.title}</p>
+                          <p className="truncate text-[16px] font-normal leading-tight text-foreground">{t.title}</p>
+                          <div className="mt-1 flex items-center gap-1.5">
                             {(t as any).explicit && (
-                              <span className="rounded-[3px] bg-muted px-1 text-[9px] font-bold text-muted-foreground">E</span>
+                              <span className="rounded-[2px] bg-muted-foreground/70 px-[3px] text-[9px] font-bold leading-[13px] text-background">E</span>
                             )}
+                            <p className="truncate text-[13px] text-muted-foreground">
+                              Song • {t.artist}
+                            </p>
                           </div>
-                          <p className="mt-0.5 truncate text-[12.5px] font-medium text-muted-foreground">{t.artist}</p>
-                          {t.album && t.album !== "Unknown Album" && (
-                            <p className="truncate text-[11px] text-muted-foreground/70">{t.album}</p>
-                          )}
                         </div>
-                        <span className="shrink-0 text-[11px] font-semibold tabular-nums text-muted-foreground">
-                          {formatDuration(t.duration)}
-                        </span>
                         <SongActionsMenu
                           track={t}
                           open={menuTrackId === t.id}
@@ -421,15 +417,15 @@ export default function Search() {
                     const a = entry.item as Artist;
                     return (
                       <motion.div key={`ar-${a.id}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                        className="flex items-center gap-3 rounded-lg p-2 cursor-pointer hover:bg-white/10 active:bg-white/15 transition-colors"
+                        className="flex cursor-pointer items-center gap-3 py-2"
                         onClick={() => {
                           addRecentSearchItem({ id: String(a.id), kind: "artist", title: a.name, subtitle: "Artist", artwork: a.avatar, query: a.name });
                           navigate(`/artist/${encodeURIComponent(a.name)}`);
                         }}>
-                        <img src={a.avatar} alt="" className="h-12 w-12 rounded-full object-cover flex-shrink-0" />
+                        <img src={a.avatar} alt="" className="h-[52px] w-[52px] shrink-0 rounded-full bg-muted/30 object-cover" />
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-foreground">{a.name}</p>
-                          <p className="truncate text-xs text-muted-foreground">Artist</p>
+                          <p className="truncate text-[16px] font-normal leading-tight text-foreground">{a.name}</p>
+                          <p className="mt-1 truncate text-[13px] text-muted-foreground">Artist</p>
                         </div>
                       </motion.div>
                     );
@@ -438,17 +434,17 @@ export default function Search() {
                     const p = entry.item as any;
                     return (
                       <motion.div key={`pl-${p.id}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                        className="flex items-center gap-3 rounded-lg p-2 cursor-pointer hover:bg-white/10 active:bg-white/15 transition-colors"
+                        className="flex cursor-pointer items-center gap-3 py-2"
                         onClick={() => {
                           addRecentSearchItem({ id: String(p.id), kind: "playlist", title: p.name, subtitle: "Playlist", artwork: p.cover_image || undefined, query: p.name });
                           navigate(`/user-playlist/${p.id}`);
                         }}>
-                        <div className="h-12 w-12 rounded-lg bg-muted/30 overflow-hidden flex-shrink-0">
-                          {p.cover_image ? <img src={p.cover_image} alt="" className="h-full w-full object-cover" /> : <Music className="h-5 w-5 text-muted-foreground m-auto mt-3.5" />}
+                        <div className="h-[52px] w-[52px] shrink-0 overflow-hidden rounded-[3px] bg-muted/30">
+                          {p.cover_image ? <img src={p.cover_image} alt="" className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center"><Music className="h-5 w-5 text-muted-foreground" /></div>}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-foreground">{p.name}</p>
-                          <p className="truncate text-xs text-muted-foreground">Playlist</p>
+                          <p className="truncate text-[16px] font-normal leading-tight text-foreground">{p.name}</p>
+                          <p className="mt-1 truncate text-[13px] text-muted-foreground">Playlist</p>
                         </div>
                       </motion.div>
                     );
@@ -461,16 +457,61 @@ export default function Search() {
 
           {/* Filtered views */}
           {showArtists && activeFilter === 'artists' && filteredArtists.length > 0 && (
-            <section><h2 className="mb-2 text-base font-bold text-foreground">Artists</h2>
-              <div className="space-y-1">{filteredArtists.map((a, i) => (
+            <section><h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Artists</h2>
+              <div>{filteredArtists.map((a, i) => (
                 <motion.div key={a.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                  className="flex items-center gap-3 rounded-lg p-2 cursor-pointer hover:bg-white/10" onClick={() => navigate(`/artist/${encodeURIComponent(a.name)}`)}>
-                  <img src={a.avatar} alt="" className="h-12 w-12 rounded-full object-cover flex-shrink-0" />
-                  <div><p className="text-sm font-semibold text-foreground">{a.name}</p><p className="text-xs text-muted-foreground">Artist</p></div>
+                  className="flex cursor-pointer items-center gap-3 py-2" onClick={() => navigate(`/artist/${encodeURIComponent(a.name)}`)}>
+                  <img src={a.avatar} alt="" className="h-[52px] w-[52px] shrink-0 rounded-full bg-muted/30 object-cover" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[16px] font-normal leading-tight text-foreground">{a.name}</p>
+                    <p className="mt-1 text-[13px] text-muted-foreground">Artist</p>
+                  </div>
                 </motion.div>
               ))}</div>
             </section>
           )}
+          {showTracks && activeFilter === 'tracks' && filteredTracks.length > 0 && (
+            <section><h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Songs</h2>
+              <div>{filteredTracks.map((t, i) => (
+                <motion.div key={t.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.02, 0.3) }}
+                  className="group flex cursor-pointer items-center gap-3 py-2"
+                  onClick={() => playTrack(t, filteredTracks)}>
+                  <div className="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-[3px] bg-muted/30">
+                    <img src={t.artwork} alt="" loading="lazy" className="h-full w-full object-cover" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                      <Play className="h-5 w-5 text-white" fill="currentColor" />
+                    </div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[16px] font-normal leading-tight text-foreground">{t.title}</p>
+                    <p className="mt-1 truncate text-[13px] text-muted-foreground">Song • {t.artist}</p>
+                  </div>
+                  <SongActionsMenu
+                    track={t}
+                    open={menuTrackId === t.id}
+                    onToggle={() => setMenuTrackId(menuTrackId === t.id ? null : t.id)}
+                    onClose={() => setMenuTrackId(null)}
+                    onAddToPlaylist={() => { setMenuTrackId(null); setPlaylistTrack(t); }}
+                  />
+                </motion.div>
+              ))}</div>
+            </section>
+          )}
+          {showAlbums && activeFilter === 'albums' && filteredAlbums.length > 0 && (
+            <section><h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Albums</h2>
+              <div>{filteredAlbums.map((a, i) => (
+                <motion.div key={a.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
+                  className="flex cursor-pointer items-center gap-3 py-2" onClick={() => navigate(`/album/${a.id.toString().replace("deezer-", "")}`)}>
+                  <img src={a.artwork} alt="" className="h-[52px] w-[52px] shrink-0 rounded-[3px] bg-muted/30 object-cover" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[16px] font-normal leading-tight text-foreground">{a.title}</p>
+                    <p className="mt-1 truncate text-[13px] text-muted-foreground">Album • {a.artist}</p>
+                  </div>
+                </motion.div>
+              ))}</div>
+            </section>
+          )}
+
           {showTracks && activeFilter === 'tracks' && filteredTracks.length > 0 && (
             <section><h2 className="mb-2 text-base font-bold text-foreground">Songs</h2>
               <div className="glass-card p-2">{filteredTracks.map((t, i) => <TrackCard key={t.id} track={t} index={i} contextTracks={filteredTracks} radioFromSearch />)}</div>
