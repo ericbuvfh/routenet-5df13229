@@ -119,7 +119,7 @@ export function HomeSectionRow({ section, onPlay }: Props) {
         </div>
       </div>
       <div className="-mx-4 overflow-x-auto overscroll-x-contain scroll-smooth px-4 pb-0.5 scrollbar-hide snap-x snap-mandatory">
-        <div className="flex items-start gap-2 sm:gap-2.5">;
+        <div className="flex items-start gap-2 sm:gap-2.5">
           {items ?? Array.from({ length: section.kind === "videos" ? 3 : section.kind === "songlist" ? 2 : 6 }).map((_, i) =>
             section.kind === "videos" ? <VideoSkeleton key={i} />
               : section.kind === "songlist" ? <ListSkeleton key={i} />
