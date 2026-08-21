@@ -512,23 +512,6 @@ export default function Search() {
             </section>
           )}
 
-          {showTracks && activeFilter === 'tracks' && filteredTracks.length > 0 && (
-            <section><h2 className="mb-2 text-base font-bold text-foreground">Songs</h2>
-              <div className="glass-card p-2">{filteredTracks.map((t, i) => <TrackCard key={t.id} track={t} index={i} contextTracks={filteredTracks} radioFromSearch />)}</div>
-            </section>
-          )}
-          {showAlbums && activeFilter === 'albums' && filteredAlbums.length > 0 && (
-            <section><h2 className="mb-2 text-base font-bold text-foreground">Albums</h2>
-              <div className="space-y-1">{filteredAlbums.map((a, i) => (
-                <motion.div key={a.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                  className="flex items-center gap-3 rounded-lg p-2 cursor-pointer hover:bg-white/10" onClick={() => navigate(`/album/${a.id.toString().replace("deezer-", "")}`)}>
-                  {/* album row */}
-                  <img src={a.artwork} alt="" className="h-12 w-12 rounded-lg object-cover flex-shrink-0" />
-                  <div><p className="text-sm font-semibold text-foreground">{a.title}</p><p className="text-xs text-muted-foreground">Album • {a.artist}</p></div>
-                </motion.div>
-              ))}</div>
-            </section>
-          )}
           {showMixes && (
             <MixesResults query={debouncedQuery} />
           )}
@@ -598,17 +581,17 @@ function MixesResults({ query }: { query: string }) {
 
   return (
     <section>
-      <h2 className="mb-2 text-base font-bold text-foreground">Mixes</h2>
-      <div className="space-y-2">
+      <h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Mixes</h2>
+      <div>
         {data.map((v: any) => (
           <button key={v.id} onClick={() => playVideo({
             id: `yt-mix-${v.id}`, title: v.title, artist: v.channelTitle || "YouTube",
             youtubeId: v.id, thumbnail: v.thumbnail || "", duration: v.duration || 0,
-          })} className="flex w-full items-center gap-3 rounded-xl p-2 text-left hover:bg-white/10 transition-colors">
-            <img src={v.thumbnail} alt="" className="h-14 w-20 rounded-lg object-cover flex-shrink-0" />
+          })} className="flex w-full items-center gap-3 py-2 text-left">
+            <img src={v.thumbnail} alt="" className="h-[52px] w-[92px] shrink-0 rounded-[3px] bg-muted/30 object-cover" />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-foreground">{v.title}</p>
-              <p className="truncate text-xs text-muted-foreground">Mix • {v.channelTitle || "YouTube"}</p>
+              <p className="truncate text-[16px] font-normal leading-tight text-foreground">{v.title}</p>
+              <p className="mt-1 truncate text-[13px] text-muted-foreground">Mix • {v.channelTitle || "YouTube"}</p>
             </div>
           </button>
         ))}
