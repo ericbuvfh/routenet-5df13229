@@ -70,9 +70,26 @@ export default function Home() {
     [followedArtists, followedGenres, seedKey, userSeed],
   );
 
-  const [filter, setFilter] = useState<HomeFilter>("all");
-  const [visibleCount, setVisibleCount] = useState(INITIAL_BATCH);
+  const [filter, setFilter] = useState<HomeFilter>(persisted.filter);
+  const [visibleCount, setVisibleCount] = useState(persisted.visibleCount);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Keep feed depth, filter and scroll offset across navigation so returning
+  // to Home restores the exact previous view instead of rebuilding it.
+  useEffect(() => {
+    persisted.filter = filter;
+    persisted.visibleCount = visibleCount;
+  }, [filter, visibleCount]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (persisted.scrollTop > 0) el.scrollTop = persisted.scrollTop;
+    const onScroll = () => { persisted.scrollTop = el.scrollTop; };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
