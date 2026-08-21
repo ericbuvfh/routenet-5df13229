@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Clock, Search as SearchIcon, Settings, WifiOff } from "lucide-react";
+import { WifiOff } from "lucide-react";
 import type { Track } from "@/data/mockData";
 import { usePlayer } from "@/context/PlayerContext";
 import { useOnboardingPrefs } from "@/hooks/useOnboardingPrefs";
@@ -26,13 +26,6 @@ function useUserSeed(): string {
     }).catch(() => {});
   }, []);
   return seed;
-}
-
-function greeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
 }
 
 function getDisplayName(): string {
