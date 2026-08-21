@@ -105,11 +105,11 @@ export function HomeSectionRow({ section, onPlay }: Props) {
   })();
 
   return (
-    <section ref={ref} className="space-y-3.5">
+    <section ref={ref} className="space-y-3">
       <div className="flex items-end justify-between gap-3 px-1">
         <div className="min-w-0">
-          <h2 className="truncate text-[17px] font-extrabold tracking-tight text-foreground sm:text-xl">{data?.title || section.title}</h2>
-          {section.subtitle && <p className="truncate text-[11px] font-medium text-muted-foreground">{section.subtitle}</p>}
+          <h2 className="truncate text-[19px] font-extrabold tracking-tight text-foreground sm:text-2xl">{data?.title || section.title}</h2>
+          {section.subtitle && <p className="truncate text-[12px] font-normal text-muted-foreground">{section.subtitle}</p>}
         </div>
       </div>
       <div className="-mx-4 overflow-x-auto overscroll-x-contain scroll-smooth px-4 pb-1 scrollbar-hide snap-x snap-mandatory">

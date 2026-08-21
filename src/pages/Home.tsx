@@ -100,7 +100,6 @@ export default function Home() {
   }, [playTrack]);
 
 
-  const displayName = getDisplayName();
 
   if (isOffline) {
     return (
@@ -130,7 +129,12 @@ export default function Home() {
     );
   }
 
-  const visibleSections = sections.slice(0, visibleCount);
+  const filteredSections = sections.filter((s) => {
+    if (filter === "all") return true;
+    const isTalk = /podcast|episode|show/i.test(`${s.title} ${s.subtitle ?? ""}`) || s.kind === "videos";
+    return filter === "podcasts" ? isTalk : !isTalk;
+  });
+  const visibleSections = filteredSections.slice(0, visibleCount);
 
   return (
     <div className="custom-scrollbar relative min-h-screen overflow-y-auto pb-28">
@@ -165,7 +169,10 @@ export default function Home() {
         {visibleSections.map((section) => (
           <HomeSectionRow key={section.id} section={section} onPlay={handlePlay} />
         ))}
-        {visibleCount < sections.length && (
+        {visibleSections.length === 0 && (
+          <p className="py-12 text-center text-sm text-muted-foreground">Nothing here yet — try another filter.</p>
+        )}
+        {visibleCount < filteredSections.length && (
           <div ref={sentinelRef} className="h-24 w-full" />
         )}
       </main>

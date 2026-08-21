@@ -19,22 +19,22 @@ export function BottomNav() {
     <nav
       className="fixed bottom-0 left-0 right-0 z-50"
       style={{
-        background: "hsl(265 40% 5% / 0.94)",
+        background: "linear-gradient(180deg, hsl(0 0% 7% / 0.85) 0%, hsl(0 0% 4%) 60%)",
         backdropFilter: "blur(24px)",
         WebkitBackdropFilter: "blur(24px)",
-        borderTop: "1px solid hsl(271 30% 25% / 0.4)",
+        borderTop: "1px solid hsl(0 0% 100% / 0.06)",
       }}
     >
-      <div className="mx-auto flex h-14 max-w-md items-center justify-around px-3">
+      <div className="mx-auto flex h-16 max-w-md items-center justify-around px-3">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
             <NavLink key={item.path} to={item.path}
               className="flex flex-col items-center gap-0.5 relative min-w-[3rem] py-1">
               <motion.div whileTap={{ scale: 0.88 }} transition={{ duration: 0.1 }}>
-                <item.icon className={cn("h-[18px] w-[18px]", isActive ? "text-primary" : "text-white/50")} />
+                <item.icon className={cn("h-[22px] w-[22px]", isActive ? "text-foreground" : "text-muted-foreground")} />
               </motion.div>
-              <span className={cn("text-[9px] font-semibold tracking-wide", isActive ? "text-primary" : "text-white/50")}>
+              <span className={cn("text-[10px] font-medium tracking-wide", isActive ? "text-foreground" : "text-muted-foreground")}>
                 {item.label}
               </span>
             </NavLink>
