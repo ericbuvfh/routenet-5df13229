@@ -69,7 +69,13 @@ export function HomeSectionRow({ section, onPlay }: Props) {
       ));
     }
 
-    if (section.kind === "songlist" && data.songs?.length) {
+    // Collaborations, radio and "Inspired by" rows borrow the stacked
+    // music-video listing layout instead of square cards.
+    const listLike =
+      section.kind === "songlist" ||
+      /:(collabs|radio|inspired)$/.test(section.id) ||
+      /(collaboration|radio|inspired by)/i.test(section.title);
+    if (listLike && data.songs?.length) {
       const songs = data.songs.slice(0, 16);
       const columns: Track[][] = [];
       for (let i = 0; i < songs.length; i += 4) columns.push(songs.slice(i, i + 4));
@@ -105,15 +111,15 @@ export function HomeSectionRow({ section, onPlay }: Props) {
   })();
 
   return (
-    <section ref={ref} className="space-y-2">
+    <section ref={ref} className="space-y-1.5">
       <div className="flex items-end justify-between gap-3 px-1">
         <div className="min-w-0">
-          <h2 className="truncate text-[19px] font-extrabold tracking-tight text-foreground sm:text-2xl">{data?.title || section.title}</h2>
-          {section.subtitle && <p className="truncate text-[12px] font-normal text-muted-foreground">{section.subtitle}</p>}
+          <h2 className="truncate text-[20px] font-bold leading-[26px] tracking-[-0.02em] text-foreground sm:text-[22px]">{data?.title || section.title}</h2>
+          {section.subtitle && <p className="truncate text-[12px] font-normal leading-[16px] text-muted-foreground">{section.subtitle}</p>}
         </div>
       </div>
       <div className="-mx-4 overflow-x-auto overscroll-x-contain scroll-smooth px-4 pb-0.5 scrollbar-hide snap-x snap-mandatory">
-        <div className="flex gap-2.5 sm:gap-3">
+        <div className="flex items-start gap-2 sm:gap-2.5">
           {items ?? Array.from({ length: section.kind === "videos" ? 3 : section.kind === "songlist" ? 2 : 6 }).map((_, i) =>
             section.kind === "videos" ? <VideoSkeleton key={i} />
               : section.kind === "songlist" ? <ListSkeleton key={i} />

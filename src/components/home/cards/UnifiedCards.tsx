@@ -16,8 +16,9 @@ const IMG = "h-full w-full object-cover transition-transform duration-[600ms] ea
 const PLAY_FAB =
   "absolute bottom-2 right-2 flex h-11 w-11 translate-y-2 items-center justify-center rounded-full bg-primary text-primary-foreground opacity-0 shadow-[0_8px_18px_-4px_hsl(0_0%_0%_/_0.8)] transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100";
 const CARD_BTN = "group shrink-0 snap-start text-left transition-transform duration-300 active:scale-[0.97]";
-const TITLE = "mt-2.5 line-clamp-1 text-[14px] font-bold leading-tight tracking-[-0.01em] text-foreground";
-const SUB = "mt-1 line-clamp-2 text-[12px] font-medium leading-snug text-muted-foreground";
+/** Spotify card typography: 14px semibold title, 12px normal muted subtitle. */
+const TITLE = "mt-2 line-clamp-1 text-[14px] font-semibold leading-[18px] tracking-[-0.01em] text-foreground";
+const SUB = "mt-0.5 line-clamp-1 h-[16px] text-[12px] font-normal leading-[16px] text-muted-foreground";
 
 
 function fmtDuration(seconds?: number) {
@@ -61,8 +62,8 @@ export function SongListRow({
           </span>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-semibold text-foreground">{toTitleCase(track.title)}</p>
-          <p className="truncate text-[12px] font-normal text-muted-foreground">
+          <p className="truncate text-[15px] font-normal leading-[20px] text-foreground">{toTitleCase(track.title)}</p>
+          <p className="truncate text-[13px] font-normal leading-[17px] text-muted-foreground">
             {[toTitleCase(track.artist), album || ""].filter(Boolean).join(" • ")}
           </p>
         </div>
@@ -203,7 +204,7 @@ export function SongCard({ track, onClick }: { track: Track; onClick: () => void
         </div>
       </div>
       <p className={TITLE}>{toTitleCase(track.title)}</p>
-      <p className={cn(SUB, "line-clamp-1")}>{toTitleCase(track.artist)}</p>
+      <p className={SUB}>{toTitleCase(track.artist)}</p>
     </button>
   );
 }
@@ -224,7 +225,7 @@ export function AlbumCard({ album, onClick }: {
         </div>
       </div>
       <p className={TITLE}>{toTitleCase(album.title)}</p>
-      <p className={cn(SUB, "line-clamp-1")}>{toTitleCase(album.artist)}</p>
+      <p className={SUB}>{toTitleCase(album.artist)}</p>
     </button>
   );
 }
@@ -244,7 +245,7 @@ export function PlaylistCard({ playlist, onClick }: {
           <Play className="ml-0.5 h-[18px] w-[18px]" fill="currentColor" />
         </div>
       </div>
-      <p className={cn(TITLE, "line-clamp-2")}>{playlist.title}</p>
+      <p className={TITLE}>{playlist.title}</p>
       <p className={SUB}>{playlist.description || playlist.creator || "Playlist"}</p>
     </button>
   );
@@ -262,7 +263,7 @@ export function ArtistCard({ artist, onClick }: {
           : <div className="h-full w-full bg-secondary" />}
       </div>
       <p className={TITLE}>{toTitleCase(artist.name)}</p>
-      <p className={cn(SUB, "line-clamp-1")}>Artist</p>
+      <p className={SUB}>Artist</p>
     </button>
   );
 }
@@ -271,8 +272,8 @@ export function CardSkeleton({ round = false }: { round?: boolean }) {
   return (
     <div className={cn("shrink-0", CARD_W)}>
       <div className={cn("aspect-square animate-pulse bg-secondary/60", round ? "rounded-full" : "rounded-[8px]")} />
-      <div className="mt-2.5 h-3 w-3/4 animate-pulse rounded bg-secondary/60" />
-      <div className="mt-1.5 h-3 w-1/2 animate-pulse rounded bg-secondary/40" />
+      <div className="mt-2 h-3.5 w-3/4 animate-pulse rounded bg-secondary/60" />
+      <div className="mt-1 h-3 w-1/2 animate-pulse rounded bg-secondary/40" />
     </div>
   );
 }

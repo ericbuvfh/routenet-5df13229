@@ -137,7 +137,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="relative space-y-5 px-4 pt-3">
+      <main className="relative space-y-4 px-4 pt-2">
         <QuickAccessGrid />
         {visibleSections.map((section) => (
           <HomeSectionRow key={section.id} section={section} onPlay={handlePlay} />
