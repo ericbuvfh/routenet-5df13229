@@ -8,8 +8,8 @@ import type { Track } from "@/data/mockData";
  * 4 on desktop, with a small peek so the row reads as scrollable.
  */
 const CARD_W = "w-[40vw] sm:w-[27vw] md:w-[21vw] lg:w-[17vw] max-w-[210px]";
-const ART = "overflow-hidden rounded-2xl bg-card ring-1 ring-border/40 shadow-sm transition-all duration-300 group-hover:shadow-elevated group-hover:ring-primary/30";
-const IMG = "h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.07]";
+const ART = "overflow-hidden rounded-[6px] bg-[hsl(0_0%_16%)] shadow-[0_8px_24px_hsl(0_0%_0%_/_0.45)] transition-shadow duration-300 group-hover:shadow-[0_14px_34px_hsl(0_0%_0%_/_0.6)]";
+const IMG = "h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]";
 
 function fmtDuration(seconds?: number) {
   if (!seconds || seconds <= 0) return "";
@@ -52,8 +52,8 @@ export function SongListRow({
           </span>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-bold text-foreground">{toTitleCase(track.title)}</p>
-          <p className="truncate text-[11px] font-medium text-muted-foreground">
+          <p className="truncate text-[14px] font-semibold text-foreground">{toTitleCase(track.title)}</p>
+          <p className="truncate text-[12px] font-normal text-muted-foreground">
             {[toTitleCase(track.artist), album || ""].filter(Boolean).join(" • ")}
           </p>
         </div>
@@ -111,8 +111,8 @@ export function MusicVideoCard({ video, onClick }: { video: FeedVideo; onClick: 
           <Play className="ml-0.5 h-4 w-4" fill="currentColor" />
         </span>
       </div>
-      <p className="mt-2 line-clamp-1 text-[13px] font-bold text-foreground">{toTitleCase(video.title)}</p>
-      <p className="line-clamp-1 text-[11px] font-medium text-muted-foreground">
+      <p className="mt-2 line-clamp-1 text-[14px] font-semibold text-foreground">{toTitleCase(video.title)}</p>
+      <p className="line-clamp-1 text-[12px] font-normal text-muted-foreground">
         {[toTitleCase(video.artist), meta].filter(Boolean).join(" • ")}
       </p>
     </button>
@@ -176,7 +176,7 @@ export function ListSkeleton() {
 export function VideoSkeleton() {
   return (
     <div className="w-[70vw] shrink-0 sm:w-[46vw] md:w-[32vw] lg:w-[25vw] max-w-[320px]">
-      <div className="aspect-video animate-pulse rounded-2xl bg-secondary/60" />
+      <div className="aspect-video animate-pulse rounded-[6px] bg-secondary/60" />
       <div className="mt-2 h-3 w-3/4 animate-pulse rounded bg-secondary/60" />
       <div className="mt-1.5 h-3 w-1/2 animate-pulse rounded bg-secondary/40" />
     </div>
@@ -193,8 +193,8 @@ export function SongCard({ track, onClick }: { track: Track; onClick: () => void
           <Play className="ml-0.5 h-4 w-4" fill="currentColor" />
         </div>
       </div>
-      <p className="mt-2.5 line-clamp-1 text-[13px] font-bold text-foreground">{toTitleCase(track.title)}</p>
-      <p className="line-clamp-1 text-[11px] font-medium text-muted-foreground">{toTitleCase(track.artist)}</p>
+      <p className="mt-2 line-clamp-1 text-[14px] font-semibold text-foreground">{toTitleCase(track.title)}</p>
+      <p className="line-clamp-1 text-[12px] font-normal text-muted-foreground">{toTitleCase(track.artist)}</p>
     </button>
   );
 }
@@ -210,8 +210,8 @@ export function AlbumCard({ album, onClick }: {
           ? <img src={album.cover} alt={album.title} loading="lazy" decoding="async" className={IMG} />
           : <div className="h-full w-full bg-secondary" />}
       </div>
-      <p className="mt-2.5 line-clamp-1 text-[13px] font-bold text-foreground">{toTitleCase(album.title)}</p>
-      <p className="line-clamp-1 text-[11px] font-medium text-muted-foreground">{toTitleCase(album.artist)}</p>
+      <p className="mt-2 line-clamp-1 text-[14px] font-semibold text-foreground">{toTitleCase(album.title)}</p>
+      <p className="line-clamp-1 text-[12px] font-normal text-muted-foreground">{toTitleCase(album.artist)}</p>
     </button>
   );
 }
@@ -227,8 +227,8 @@ export function PlaylistCard({ playlist, onClick }: {
           ? <img src={playlist.cover} alt={playlist.title} loading="lazy" decoding="async" className={IMG} />
           : <div className="h-full w-full bg-secondary" />}
       </div>
-      <p className="mt-2.5 line-clamp-2 text-[13px] font-bold leading-tight text-foreground">{playlist.title}</p>
-      <p className="line-clamp-1 text-[11px] font-medium text-muted-foreground">{playlist.creator || "Playlist"}</p>
+      <p className="mt-2 line-clamp-2 text-[14px] font-semibold leading-snug text-foreground">{playlist.title}</p>
+      <p className="line-clamp-1 text-[12px] font-normal text-muted-foreground">{playlist.creator || "Playlist"}</p>
     </button>
   );
 }
@@ -244,8 +244,8 @@ export function ArtistCard({ artist, onClick }: {
           ? <img src={artist.picture} alt={artist.name} loading="lazy" decoding="async" className={IMG} />
           : <div className="h-full w-full bg-secondary" />}
       </div>
-      <p className="mt-2.5 line-clamp-1 text-[13px] font-bold text-foreground">{toTitleCase(artist.name)}</p>
-      <p className="line-clamp-1 text-[11px] font-medium text-muted-foreground">Artist</p>
+      <p className="mt-2 line-clamp-1 text-[14px] font-semibold text-foreground">{toTitleCase(artist.name)}</p>
+      <p className="line-clamp-1 text-[12px] font-normal text-muted-foreground">Artist</p>
     </button>
   );
 }
