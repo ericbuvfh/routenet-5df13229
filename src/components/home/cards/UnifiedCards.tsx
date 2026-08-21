@@ -16,8 +16,9 @@ const IMG = "h-full w-full object-cover transition-transform duration-[600ms] ea
 const PLAY_FAB =
   "absolute bottom-2 right-2 flex h-11 w-11 translate-y-2 items-center justify-center rounded-full bg-primary text-primary-foreground opacity-0 shadow-[0_8px_18px_-4px_hsl(0_0%_0%_/_0.8)] transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100";
 const CARD_BTN = "group shrink-0 snap-start text-left transition-transform duration-300 active:scale-[0.97]";
-const TITLE = "mt-2.5 line-clamp-1 text-[14px] font-bold leading-tight tracking-[-0.01em] text-foreground";
-const SUB = "mt-1 line-clamp-2 text-[12px] font-medium leading-snug text-muted-foreground";
+/** Spotify card typography: 14px semibold title, 12px normal muted subtitle. */
+const TITLE = "mt-2 line-clamp-1 text-[14px] font-semibold leading-[18px] tracking-[-0.01em] text-foreground";
+const SUB = "mt-0.5 line-clamp-1 h-[16px] text-[12px] font-normal leading-[16px] text-muted-foreground";
 
 
 function fmtDuration(seconds?: number) {
