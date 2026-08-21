@@ -69,7 +69,13 @@ export function HomeSectionRow({ section, onPlay }: Props) {
       ));
     }
 
-    if (section.kind === "songlist" && data.songs?.length) {
+    // Collaborations, radio and "Inspired by" rows borrow the stacked
+    // music-video listing layout instead of square cards.
+    const listLike =
+      section.kind === "songlist" ||
+      /:(collabs|radio|inspired)$/.test(section.id) ||
+      /(collaboration|radio|inspired by)/i.test(section.title);
+    if (listLike && data.songs?.length) {
       const songs = data.songs.slice(0, 16);
       const columns: Track[][] = [];
       for (let i = 0; i < songs.length; i += 4) columns.push(songs.slice(i, i + 4));
