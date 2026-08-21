@@ -265,7 +265,10 @@ function ArtistSearch({ onPick }: { onPick: (a: ArtistPick) => void }) {
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const [step, setStep] = useState<Step>("welcome");
+  const initialStep: Step =
+    new URLSearchParams(window.location.search).get("step") === "genres" ? "genres" : "welcome";
+  const [step, setStep] = useState<Step>(initialStep);
+
   const [selectedGenres, setSelectedGenres] = useState<GenrePick[]>([]);
   const [selectedSubgenres, setSelectedSubgenres] = useState<string[]>([]);
   const [selectedArtists, setSelectedArtists] = useState<ArtistPick[]>([]);

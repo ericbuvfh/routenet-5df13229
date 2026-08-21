@@ -18,15 +18,24 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const afterAuth = () => {
+    localStorage.removeItem("routenet-guest");
+    navigate(
+      localStorage.getItem("routenet-onboarded") === "true"
+        ? "/home"
+        : "/onboarding?step=genres",
+    );
+  };
+
   const handleGoogle = async () => {
     setLoading(true);
     try {
+      // Google OAuth is fully handled by Lovable-managed credentials.
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
       });
       if (result.error) throw result.error;
-      localStorage.removeItem("routenet-guest");
-      navigate(localStorage.getItem("routenet-onboarded") === "true" ? "/home" : "/onboarding");
+      afterAuth();
     } catch (err: any) {
       toast.error(err?.message || "Google sign-in failed");
     } finally {
@@ -49,15 +58,13 @@ export default function Auth() {
           },
         });
         if (error) throw error;
-        localStorage.removeItem("routenet-guest");
         toast.success("Account created");
-        navigate("/onboarding");
+        afterAuth();
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        localStorage.removeItem("routenet-guest");
         toast.success("Welcome back");
-        navigate(localStorage.getItem("routenet-onboarded") === "true" ? "/home" : "/onboarding");
+        afterAuth();
       }
     } catch (err: any) {
       toast.error(err?.message || "Authentication failed");
@@ -69,8 +76,9 @@ export default function Auth() {
   const skip = () => {
     // Guest mode — taste profile and library live in local storage only.
     localStorage.setItem("routenet-guest", "true");
-    navigate("/onboarding");
+    navigate("/onboarding?step=genres");
   };
+
 
   return (
     <div
