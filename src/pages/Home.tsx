@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Search as SearchIcon, WifiOff } from "lucide-react";
+import { Clock, Search as SearchIcon, Settings, WifiOff } from "lucide-react";
 import type { Track } from "@/data/mockData";
 import { usePlayer } from "@/context/PlayerContext";
 import { useOnboardingPrefs } from "@/hooks/useOnboardingPrefs";
@@ -11,6 +11,7 @@ import { HomeSectionRow } from "@/components/home/HomeSectionRow";
 import { QuickAccessGrid } from "@/components/home/QuickAccessGrid";
 import { recordTasteEvent } from "@/services/tasteEvents";
 import { AppLogo } from "@/components/brand/AppLogo";
+import { HomeFilterPills, type HomeFilter } from "@/components/home/HomeFilterPills";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -25,6 +26,13 @@ function useUserSeed(): string {
     }).catch(() => {});
   }, []);
   return seed;
+}
+
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
 }
 
 function getDisplayName(): string {
@@ -69,6 +77,7 @@ export default function Home() {
     [followedArtists, followedGenres, seedKey, userSeed],
   );
 
+  const [filter, setFilter] = useState<HomeFilter>("all");
   const [visibleCount, setVisibleCount] = useState(INITIAL_BATCH);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
