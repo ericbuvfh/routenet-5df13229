@@ -154,7 +154,7 @@ export default function Home() {
   const visibleSections = filteredSections.slice(0, visibleCount);
 
   return (
-    <div className="custom-scrollbar relative min-h-screen overflow-y-auto pb-28">
+    <div ref={scrollRef} className="custom-scrollbar relative min-h-screen overflow-y-auto pb-28">
       <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl">
         <div className="px-4 pb-3 pt-9">
           <HomeFilterPills value={filter} onChange={setFilter} />
