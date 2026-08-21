@@ -2,65 +2,65 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Routenet — Professional charcoal + muted crimson.
-   No neon, no glow spam. Designed to read premium & calm. */
+/* Routenet — Spotify-grade dark surface: near-black canvas, elevated
+   graphite cards, single vivid green accent. Premium, calm, high contrast. */
 
 @layer base {
   :root {
     /* Neutral canvas */
-    --background: 220 8% 6%;
-    --background-elevated: 220 8% 9%;
-    --background-card: 220 8% 11%;
-    --foreground: 210 15% 96%;
+    --background: 0 0% 7%;
+    --background-elevated: 0 0% 11%;
+    --background-card: 0 0% 15%;
+    --foreground: 0 0% 100%;
 
-    --card: 220 8% 10%;
-    --card-foreground: 210 15% 96%;
+    --card: 0 0% 15%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 220 8% 8%;
-    --popover-foreground: 210 15% 96%;
+    --popover: 0 0% 11%;
+    --popover-foreground: 0 0% 100%;
 
-    /* Primary — refined bordeaux/crimson, muted (not neon) */
-    --primary: 354 54% 44%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 354 50% 52%;
+    /* Primary — Spotify green */
+    --primary: 141 73% 42%;
+    --primary-foreground: 0 0% 4%;
+    --primary-glow: 141 76% 48%;
 
-    /* Accent mirrors primary; no bright neon secondary */
-    --accent: 354 54% 44%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 141 73% 42%;
+    --accent-foreground: 0 0% 4%;
 
-    --secondary: 220 8% 14%;
-    --secondary-foreground: 210 15% 92%;
+    --secondary: 0 0% 16%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 220 8% 13%;
-    --muted-foreground: 220 8% 62%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 66%;
 
-    --destructive: 0 65% 48%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 8% 17%;
-    --input: 220 8% 14%;
-    --ring: 354 54% 44%;
+    --border: 0 0% 18%;
+    --input: 0 0% 16%;
+    --ring: 141 73% 42%;
 
-    --radius: 0.9rem;
+    --radius: 0.5rem;
 
-    --gradient-bg: linear-gradient(180deg, hsl(220 8% 5%) 0%, hsl(220 8% 7%) 100%);
-    --gradient-card: linear-gradient(160deg, hsl(220 8% 14% / 0.9) 0%, hsl(220 8% 10% / 0.95) 100%);
-    --gradient-primary: linear-gradient(135deg, hsl(354 54% 42%) 0%, hsl(354 54% 50%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(354 40% 22% / 0.35) 0%, hsl(220 8% 7%) 75%);
+    --gradient-bg: linear-gradient(180deg, hsl(0 0% 9%) 0%, hsl(0 0% 7%) 320px, hsl(0 0% 7%) 100%);
+    --gradient-card: linear-gradient(160deg, hsl(0 0% 17%) 0%, hsl(0 0% 13%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(141 73% 40%) 0%, hsl(141 76% 50%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(141 40% 20% / 0.45) 0%, hsl(0 0% 7%) 78%);
 
-    --shadow-glow: 0 4px 20px hsl(354 40% 20% / 0.35);
-    --shadow-card: 0 6px 18px hsl(0 0% 0% / 0.45);
-    --shadow-elevated: 0 12px 32px hsl(0 0% 0% / 0.5);
+    --shadow-glow: 0 4px 20px hsl(141 60% 20% / 0.35);
+    --shadow-card: 0 8px 24px hsl(0 0% 0% / 0.5);
+    --shadow-elevated: 0 16px 40px hsl(0 0% 0% / 0.6);
 
-    --sidebar-background: 220 8% 7%;
-    --sidebar-foreground: 210 15% 90%;
-    --sidebar-primary: 354 54% 44%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 8% 14%;
-    --sidebar-accent-foreground: 210 15% 92%;
-    --sidebar-border: 220 8% 17%;
-    --sidebar-ring: 354 54% 44%;
+    --sidebar-background: 0 0% 4%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 141 73% 42%;
+    --sidebar-primary-foreground: 0 0% 4%;
+    --sidebar-accent: 0 0% 14%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 18%;
+    --sidebar-ring: 141 73% 42%;
   }
+
 
   .dark { /* dark-first, same tokens */ }
 }
