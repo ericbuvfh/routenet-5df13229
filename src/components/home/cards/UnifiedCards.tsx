@@ -7,9 +7,18 @@ import type { Track } from "@/data/mockData";
  * Responsive card width — roughly 2 cards on phones, 3 on tablets and
  * 4 on desktop, with a small peek so the row reads as scrollable.
  */
-const CARD_W = "w-[40vw] sm:w-[27vw] md:w-[21vw] lg:w-[17vw] max-w-[210px]";
-const ART = "overflow-hidden rounded-[6px] bg-[hsl(0_0%_16%)] shadow-[0_8px_24px_hsl(0_0%_0%_/_0.45)] transition-shadow duration-300 group-hover:shadow-[0_14px_34px_hsl(0_0%_0%_/_0.6)]";
-const IMG = "h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]";
+const CARD_W = "w-[41vw] sm:w-[27vw] md:w-[21vw] lg:w-[17vw] max-w-[200px]";
+/** Premium Spotify-grade artwork frame: soft graphite base, deep drop shadow. */
+const ART =
+  "overflow-hidden rounded-[8px] bg-[hsl(0_0%_14%)] shadow-[0_10px_28px_-8px_hsl(0_0%_0%_/_0.75)] ring-1 ring-white/[0.06] transition-all duration-300 group-hover:shadow-[0_18px_40px_-10px_hsl(0_0%_0%_/_0.9)] group-hover:ring-white/[0.12]";
+const IMG = "h-full w-full object-cover transition-transform duration-[600ms] ease-out group-hover:scale-[1.06]";
+/** Circular green play affordance shared by every card. */
+const PLAY_FAB =
+  "absolute bottom-2 right-2 flex h-11 w-11 translate-y-2 items-center justify-center rounded-full bg-primary text-primary-foreground opacity-0 shadow-[0_8px_18px_-4px_hsl(0_0%_0%_/_0.8)] transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100";
+const CARD_BTN = "group shrink-0 snap-start text-left transition-transform duration-300 active:scale-[0.97]";
+const TITLE = "mt-2.5 line-clamp-1 text-[14px] font-bold leading-tight tracking-[-0.01em] text-foreground";
+const SUB = "mt-1 line-clamp-2 text-[12px] font-medium leading-snug text-muted-foreground";
+
 
 function fmtDuration(seconds?: number) {
   if (!seconds || seconds <= 0) return "";
