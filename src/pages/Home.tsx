@@ -18,6 +18,13 @@ import { supabase } from "@/integrations/supabase/client";
 const INITIAL_BATCH = 6;
 const BATCH_SIZE = 4;
 
+// Module-level so it survives unmount/remount on navigation.
+const persisted: { filter: HomeFilter; visibleCount: number; scrollTop: number } = {
+  filter: "all",
+  visibleCount: INITIAL_BATCH,
+  scrollTop: 0,
+};
+
 function useUserSeed(): string {
   const [seed, setSeed] = useState<string>("anon");
   useEffect(() => {
