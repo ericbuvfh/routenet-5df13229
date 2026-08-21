@@ -218,7 +218,7 @@ export default function NowPlaying() {
       </section>
 
       {/* Fixed control deck — always visible, never scrolls */}
-      <section className="relative z-10 shrink-0 space-y-4 px-7 pb-6 pt-4">
+      <section className="relative z-10 shrink-0 space-y-5 px-7 pb-[calc(1.75rem+env(safe-area-inset-bottom))] pt-5">
         <div>
           <Slider
             value={[localProgress * 100]}
