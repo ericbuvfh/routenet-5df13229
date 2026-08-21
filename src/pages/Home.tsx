@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Search as SearchIcon, WifiOff } from "lucide-react";
+import { Clock, Search as SearchIcon, Settings, WifiOff } from "lucide-react";
 import type { Track } from "@/data/mockData";
 import { usePlayer } from "@/context/PlayerContext";
 import { useOnboardingPrefs } from "@/hooks/useOnboardingPrefs";
@@ -11,6 +11,7 @@ import { HomeSectionRow } from "@/components/home/HomeSectionRow";
 import { QuickAccessGrid } from "@/components/home/QuickAccessGrid";
 import { recordTasteEvent } from "@/services/tasteEvents";
 import { AppLogo } from "@/components/brand/AppLogo";
+import { HomeFilterPills, type HomeFilter } from "@/components/home/HomeFilterPills";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -25,6 +26,13 @@ function useUserSeed(): string {
     }).catch(() => {});
   }, []);
   return seed;
+}
+
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
 }
 
 function getDisplayName(): string {
@@ -69,6 +77,7 @@ export default function Home() {
     [followedArtists, followedGenres, seedKey, userSeed],
   );
 
+  const [filter, setFilter] = useState<HomeFilter>("all");
   const [visibleCount, setVisibleCount] = useState(INITIAL_BATCH);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -91,7 +100,6 @@ export default function Home() {
   }, [playTrack]);
 
 
-  const displayName = getDisplayName();
 
   if (isOffline) {
     return (
@@ -121,35 +129,54 @@ export default function Home() {
     );
   }
 
-  const visibleSections = sections.slice(0, visibleCount);
+  const filteredSections = sections.filter((s) => {
+    if (filter === "all") return true;
+    const isTalk = /podcast|episode|show/i.test(`${s.title} ${s.subtitle ?? ""}`) || s.kind === "videos";
+    return filter === "podcasts" ? isTalk : !isTalk;
+  });
+  const visibleSections = filteredSections.slice(0, visibleCount);
 
   return (
-    <div className="custom-scrollbar min-h-screen overflow-y-auto pb-28">
-      <header className="sticky top-0 z-30 border-b border-border/50 bg-background/85 backdrop-blur-xl">
-        <div className="flex items-center gap-3 px-4 pb-3 pt-9">
-          <AppLogo className="h-9 w-9 rounded-lg border border-border/50 p-1" />
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-primary/80">routenet</p>
-            <h1 className="truncate text-lg font-extrabold tracking-tight text-foreground">Good to see you, {displayName}</h1>
-          </div>
-          <button onClick={() => navigate("/search")} aria-label="Search" className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-foreground transition-colors hover:bg-muted">
-            <SearchIcon className="h-4 w-4" />
+    <div className="custom-scrollbar relative min-h-screen overflow-y-auto pb-28">
+      {/* Spotify-style ambient wash behind the top of the feed */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[320px] bg-[linear-gradient(180deg,hsl(141_35%_18%_/_0.55)_0%,hsl(0_0%_7%)_100%)]" />
+
+      <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl">
+        <div className="flex items-center gap-3 px-4 pb-2 pt-9">
+          <button onClick={() => navigate("/profile")} aria-label="Profile" className="shrink-0">
+            <AppLogo className="h-8 w-8 rounded-full ring-1 ring-border/60" />
           </button>
-          <button onClick={() => navigate("/settings")} aria-label="Settings" className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-foreground transition-colors hover:bg-muted">
-            <Bell className="h-4 w-4" />
+          <h1 className="min-w-0 flex-1 truncate text-[22px] font-extrabold tracking-tight text-foreground">
+            {greeting()}
+          </h1>
+          <button onClick={() => navigate("/search")} aria-label="Search" className="flex h-9 w-9 items-center justify-center text-foreground/90 transition-colors hover:text-foreground">
+            <SearchIcon className="h-[21px] w-[21px]" />
           </button>
+          <button onClick={() => navigate("/recently-played")} aria-label="Recently played" className="flex h-9 w-9 items-center justify-center text-foreground/90 transition-colors hover:text-foreground">
+            <Clock className="h-[21px] w-[21px]" />
+          </button>
+          <button onClick={() => navigate("/settings")} aria-label="Settings" className="flex h-9 w-9 items-center justify-center text-foreground/90 transition-colors hover:text-foreground">
+            <Settings className="h-[21px] w-[21px]" />
+          </button>
+        </div>
+        <div className="px-4 pb-3">
+          <HomeFilterPills value={filter} onChange={setFilter} />
         </div>
       </header>
 
-      <main className="space-y-8 px-4 pt-5">
+      <main className="relative space-y-9 px-4 pt-4">
         <QuickAccessGrid />
         {visibleSections.map((section) => (
           <HomeSectionRow key={section.id} section={section} onPlay={handlePlay} />
         ))}
-        {visibleCount < sections.length && (
+        {visibleSections.length === 0 && (
+          <p className="py-12 text-center text-sm text-muted-foreground">Nothing here yet — try another filter.</p>
+        )}
+        {visibleCount < filteredSections.length && (
           <div ref={sentinelRef} className="h-24 w-full" />
         )}
       </main>
     </div>
   );
 }
+

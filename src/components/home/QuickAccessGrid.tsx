@@ -40,23 +40,20 @@ export function QuickAccessGrid() {
   if (recentSongs.length === 0) return null;
 
   return (
-    <div className="mb-6 space-y-6">
-      <section className="space-y-2.5">
-        <h2 className="px-1 text-[15px] font-extrabold tracking-tight text-foreground">Recently Listened</h2>
-        <div className="grid grid-cols-2 grid-rows-4 gap-2">
-          {recentSongs.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => playTrack(t, recentSongs)}
-              className="group flex h-14 items-center gap-2.5 overflow-hidden rounded-md bg-secondary/60 pr-2 text-left transition-colors hover:bg-secondary active:scale-[0.98]"
-            >
-              <img src={t.artwork || "/placeholder.svg"} alt="" className="h-full w-14 shrink-0 object-cover" />
-              <span className="line-clamp-2 min-w-0 flex-1 text-[12.5px] font-semibold leading-tight text-foreground">{t.title}</span>
-              <Play className="h-4 w-4 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100" fill="currentColor" />
-            </button>
-          ))}
-        </div>
-      </section>
-    </div>
+    <section className="mb-7 grid grid-cols-2 gap-2">
+      {recentSongs.map((t) => (
+        <button
+          key={t.id}
+          onClick={() => playTrack(t, recentSongs)}
+          className="group flex h-[56px] items-center gap-2.5 overflow-hidden rounded-[4px] bg-[hsl(0_0%_100%_/_0.08)] pr-2 text-left transition-colors hover:bg-[hsl(0_0%_100%_/_0.14)] active:scale-[0.98]"
+        >
+          <img src={t.artwork || "/placeholder.svg"} alt="" loading="lazy" className="h-full w-[56px] shrink-0 object-cover" />
+          <span className="line-clamp-2 min-w-0 flex-1 text-[13px] font-bold leading-tight text-foreground">{t.title}</span>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+            <Play className="ml-0.5 h-3.5 w-3.5" fill="currentColor" />
+          </span>
+        </button>
+      ))}
+    </section>
   );
 }
