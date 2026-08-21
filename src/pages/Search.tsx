@@ -361,8 +361,7 @@ export default function Search() {
       <div className="px-4 pt-4">
       {hasQuery ? (
         <div className="space-y-3">
-          {/* Skeletons while the Piped pipeline resolves */}
-          {(loadingUnified || isLoading) && topItems.length === 0 && <SearchSkeletons />}
+
 
           {/* Unified top results list — sorted by relevance, unlimited scroll */}
 
@@ -541,22 +540,7 @@ export default function Search() {
 }
 
 /** Mixes tab — YouTube long mixes from the youtube edge function. */
-/** Loading placeholders shown while results stream in. */
-function SearchSkeletons() {
-  return (
-    <div className="space-y-1.5">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-2">
-          <div className="h-14 w-14 flex-shrink-0 animate-pulse rounded-xl bg-white/10" />
-          <div className="min-w-0 flex-1 space-y-2">
-            <div className="h-3 w-2/3 animate-pulse rounded-full bg-white/10" />
-            <div className="h-2.5 w-1/3 animate-pulse rounded-full bg-white/5" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
+
 
 function MixesResults({ query }: { query: string }) {
 

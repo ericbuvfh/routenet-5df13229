@@ -491,17 +491,27 @@ export default function Onboarding() {
                   Millions of songs. Personalized by AI. Made for the way you listen.
                 </p>
                 <button
-                  onClick={() => navigate("/auth")}
+                  onClick={() => goto("genres")}
                   className="mt-12 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-semibold text-primary-foreground transition-transform active:scale-95"
                 >
                   Get Started <ArrowRight className="h-5 w-5" />
                 </button>
                 <button
-                  onClick={() => navigate("/home")}
+                  onClick={() => {
+                    localStorage.setItem("routenet-guest", "true");
+                    goto("genres");
+                  }}
                   className="mt-4 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground"
                 >
                   Continue as Guest
                 </button>
+                <button
+                  onClick={() => navigate("/auth")}
+                  className="mt-5 text-xs font-semibold text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                >
+                  Create an account
+                </button>
+
               </div>
             )}
 
