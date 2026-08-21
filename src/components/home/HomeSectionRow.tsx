@@ -105,15 +105,15 @@ export function HomeSectionRow({ section, onPlay }: Props) {
   })();
 
   return (
-    <section ref={ref} className="space-y-3">
+    <section ref={ref} className="space-y-2">
       <div className="flex items-end justify-between gap-3 px-1">
         <div className="min-w-0">
           <h2 className="truncate text-[19px] font-extrabold tracking-tight text-foreground sm:text-2xl">{data?.title || section.title}</h2>
           {section.subtitle && <p className="truncate text-[12px] font-normal text-muted-foreground">{section.subtitle}</p>}
         </div>
       </div>
-      <div className="-mx-4 overflow-x-auto overscroll-x-contain scroll-smooth px-4 pb-1 scrollbar-hide snap-x snap-mandatory">
-        <div className="flex gap-3 sm:gap-4">
+      <div className="-mx-4 overflow-x-auto overscroll-x-contain scroll-smooth px-4 pb-0.5 scrollbar-hide snap-x snap-mandatory">
+        <div className="flex gap-2.5 sm:gap-3">
           {items ?? Array.from({ length: section.kind === "videos" ? 3 : section.kind === "songlist" ? 2 : 6 }).map((_, i) =>
             section.kind === "videos" ? <VideoSkeleton key={i} />
               : section.kind === "songlist" ? <ListSkeleton key={i} />

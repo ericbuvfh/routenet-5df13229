@@ -342,7 +342,7 @@ export function pinnedSections(input: FeedInput): SectionDescriptor[] {
   const artists = taste(input.followedArtists);
   const genres = input.followedGenres;
   return pool<SectionDescriptor | null>([
-    { id: "p-made-for-you", title: "Made For You", subtitle: "Songs picked from the artists you play", kind: "songs",
+    { id: "p-made-for-you", title: "Made For You", subtitle: "Songs picked from the artists you play", kind: "songlist",
       load: madeForYouSongs(artists, genres, 20) },
     { id: "p-top-picks", title: "Top Picks For You", subtitle: "Your strongest matches right now", kind: "songs",
       load: topPicks(artists, genres, 20) },
@@ -430,7 +430,7 @@ function globalSections(input: FeedInput): SectionDescriptor[] {
 
   return pool<SectionDescriptor | null>([
     // ---- Personal ----
-    { id: "made-for-you", title: "Made For You", subtitle: "Built from the artists you love", kind: "songs",
+    { id: "made-for-you", title: "Made For You", subtitle: "Built from the artists you love", kind: "songlist",
       load: mixOfArtists(followedArtists, "songs", 25) },
     { id: "daily-mix", title: "Your Daily Mix", subtitle: "A fresh blend every day", kind: "songs",
       load: mixOfArtists(followedArtists, "mix", 25) },
@@ -589,7 +589,7 @@ const artistRelatedList = (name: string, limit = 15) => async (): Promise<Sectio
 };
 
 const ARTIST_SECTION_TEMPLATES: Array<(name: string) => SectionDescriptor> = [
-  (name) => ({ id: `art:${name}:best`, title: `Best of ${name}`, kind: "songs", load: artistOwnSongs(name, 15) }),
+  (name) => ({ id: `art:${name}:best`, title: `Best of ${name}`, kind: "songlist", load: artistOwnSongs(name, 15) }),
   (name) => ({ id: `art:${name}:latest`, title: `${name}'s Latest Releases`, kind: "albums", load: artistAlbums(name, 12, true) }),
   (name) => ({ id: `art:${name}:radio`, title: `${name} Radio`, kind: "songs", load: artistRadioSongs(name, 20) }),
   (name) => ({ id: `art:${name}:similar`, title: `Similar to ${name}`, kind: "artists", load: artistRelatedList(name, 15) }),

@@ -20,12 +20,12 @@
     --popover-foreground: 0 0% 100%;
 
     /* Primary — Spotify green */
-    --primary: 141 73% 42%;
-    --primary-foreground: 0 0% 4%;
-    --primary-glow: 141 76% 48%;
+    --primary: 0 84% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 0 88% 62%;
 
-    --accent: 141 73% 42%;
-    --accent-foreground: 0 0% 4%;
+    --accent: 0 84% 55%;
+    --accent-foreground: 0 0% 100%;
 
     --secondary: 0 0% 16%;
     --secondary-foreground: 0 0% 100%;
@@ -38,27 +38,27 @@
 
     --border: 0 0% 18%;
     --input: 0 0% 16%;
-    --ring: 141 73% 42%;
+    --ring: 0 84% 55%;
 
     --radius: 0.5rem;
 
     --gradient-bg: linear-gradient(180deg, hsl(0 0% 9%) 0%, hsl(0 0% 7%) 320px, hsl(0 0% 7%) 100%);
     --gradient-card: linear-gradient(160deg, hsl(0 0% 17%) 0%, hsl(0 0% 13%) 100%);
-    --gradient-primary: linear-gradient(135deg, hsl(141 73% 40%) 0%, hsl(141 76% 50%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(141 40% 20% / 0.45) 0%, hsl(0 0% 7%) 78%);
+    --gradient-primary: linear-gradient(135deg, hsl(0 84% 50%) 0%, hsl(0 88% 62%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(0 45% 22% / 0.45) 0%, hsl(0 0% 7%) 78%);
 
-    --shadow-glow: 0 4px 20px hsl(141 60% 20% / 0.35);
+    --shadow-glow: 0 4px 20px hsl(0 65% 25% / 0.35);
     --shadow-card: 0 8px 24px hsl(0 0% 0% / 0.5);
     --shadow-elevated: 0 16px 40px hsl(0 0% 0% / 0.6);
 
     --sidebar-background: 0 0% 4%;
     --sidebar-foreground: 0 0% 90%;
-    --sidebar-primary: 141 73% 42%;
-    --sidebar-primary-foreground: 0 0% 4%;
+    --sidebar-primary: 0 84% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 0 0% 14%;
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 0 0% 18%;
-    --sidebar-ring: 141 73% 42%;
+    --sidebar-ring: 0 84% 55%;
   }
 
 
@@ -127,7 +127,7 @@
   .scrollbar-hide::-webkit-scrollbar { display: none; }
 
   .hero-gradient {
-    background: linear-gradient(180deg, hsl(141 40% 22% / 0.4) 0%, hsl(0 0% 8% / 0.6) 55%, transparent 100%);
+    background: linear-gradient(180deg, hsl(0 45% 24% / 0.4) 0%, hsl(0 0% 8% / 0.6) 55%, transparent 100%);
   }
   .neon-card {
     background: var(--gradient-card);
@@ -151,8 +151,8 @@
   @keyframes echo-ripple { 0% { transform: scale(1); opacity: 0.35; } 100% { transform: scale(2); opacity: 0; } }
   .pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
   @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 8px hsl(141 50% 30% / 0.18); }
-    50%     { box-shadow: 0 0 18px hsl(141 50% 35% / 0.28); }
+    0%, 100% { box-shadow: 0 0 8px hsl(0 60% 35% / 0.18); }
+    50%     { box-shadow: 0 0 18px hsl(0 60% 40% / 0.28); }
   }
 
   @keyframes fade-in-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
