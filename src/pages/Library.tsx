@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Plus, Music2, Loader2, WifiOff } from "lucide-react";
+import { Search, Plus, Music2, Loader2, WifiOff, ArrowDownUp, LayoutGrid } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getUserPlaylists } from "@/services/playlistService";
