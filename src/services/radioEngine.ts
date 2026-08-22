@@ -19,10 +19,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { getTopSignalArtists, getRecentSignals } from "@/services/tasteEvents";
 import { enrichTracks } from "@/services/metadataEnrichment";
 import { toTitleCase } from "@/utils/toTitleCase";
-import {
-  resolveArtistId, getArtistRadio, getArtistRelated, getArtistTopTracks,
-  getChart, getEditorialSelection, transformTrack,
-} from "@/services/deezer";
+
+
 
 /** One manual selection == one 100-song listening session. */
 export const INITIAL_QUEUE_SIZE = 100;
