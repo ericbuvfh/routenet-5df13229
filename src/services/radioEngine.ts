@@ -50,14 +50,14 @@ const MIN_ARTIST_GAP = 8;
 const MAX_PER_ARTIST = 2;
 
 /** How many songs get Deezer artwork before the queue is handed to the player. */
-const EAGER_ENRICH = 24;
+const EAGER_ENRICH = 12;
 
 interface Suggestion {
   title: string;
   artist: string;
   role?: string;
   reason?: string;
-  /** Already-resolved metadata (Deezer fallback path). */
+  /** Already-resolved metadata (YouTube related fallback path). */
   track?: Track;
 }
 
