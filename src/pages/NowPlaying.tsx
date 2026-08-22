@@ -141,54 +141,68 @@ export default function NowPlaying() {
       </AnimatePresence>
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,hsl(0_0%_0%/0.55)_0%,hsl(0_0%_0%/0.8)_55%,hsl(var(--background))_100%)]" />
 
-      {/* Top bar */}
-      <header className="relative z-10 flex shrink-0 items-center justify-between px-4 pt-[calc(0.75rem+env(safe-area-inset-top))]">
+      {/* Top bar — centred title + artist */}
+      <header className="relative z-10 flex shrink-0 items-center justify-between gap-2 px-4 pt-[calc(0.75rem+env(safe-area-inset-top))]">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Back" className="rounded-full text-foreground hover:bg-foreground/10">
           <ChevronDown className="h-6 w-6" />
         </Button>
-        <p className="truncate px-3 text-[13px] font-semibold text-foreground">Music</p>
+        <div className="min-w-0 flex-1 text-center">
+          <h1 className="truncate text-[16px] font-bold leading-tight text-foreground">{toTitleCase(display.title)}</h1>
+          <button onClick={() => navigate(`/artist/${encodeURIComponent(display.artist)}`)} className="mx-auto block max-w-full truncate text-[12px] font-normal text-muted-foreground transition-colors hover:text-foreground">
+            {toTitleCase(display.artist)}
+          </button>
+        </div>
         <Button variant="ghost" size="icon" onClick={() => setShowMore(true)} aria-label="More" className="rounded-full text-foreground hover:bg-foreground/10">
           <MoreHorizontal className="h-6 w-6" />
         </Button>
       </header>
 
-      {/* Circular artwork */}
+      {/* Compact circular artwork inside a progress ring */}
       <section className="relative z-10 flex min-h-0 flex-1 items-center justify-center px-6 py-4">
         <motion.div
           initial={{ scale: 0.96, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 200, damping: 24 }}
-          className="aspect-square w-[min(86vw,52dvh,420px)] overflow-hidden rounded-full bg-card album-shadow"
+          className="relative aspect-square w-[min(62vw,34dvh,260px)]"
         >
-          {isResolving ? (
-            <div className="flex h-full w-full items-center justify-center bg-secondary">
-              <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            </div>
-          ) : (
-            <img src={display.artwork} alt={display.title} className="h-full w-full object-cover" />
-          )}
+          <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full -rotate-90">
+            <circle cx="50" cy="50" r={RING_R} fill="none" stroke="hsl(var(--foreground) / 0.12)" strokeWidth="2.5" />
+            <circle
+              cx="50" cy="50" r={RING_R} fill="none"
+              stroke="hsl(var(--primary))" strokeWidth="2.5" strokeLinecap="round"
+              strokeDasharray={RING_C}
+              strokeDashoffset={RING_C * (1 - Math.min(Math.max(localProgress, 0), 1))}
+            />
+          </svg>
+          <div className="absolute inset-[7%] overflow-hidden rounded-full bg-card album-shadow">
+            {isResolving ? (
+              <div className="flex h-full w-full items-center justify-center bg-secondary">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <img src={display.artwork} alt={display.title} className="h-full w-full object-cover" />
+            )}
+          </div>
         </motion.div>
       </section>
 
-      {/* Title row with add button */}
+      {/* Actions row */}
       <section className="relative z-10 shrink-0 px-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <h1 className="line-clamp-1 text-[24px] font-extrabold leading-tight tracking-tight text-foreground">{toTitleCase(display.title)}</h1>
-            <button onClick={() => navigate(`/artist/${encodeURIComponent(display.artist)}`)} className="mt-0.5 line-clamp-1 text-left text-[14px] font-normal text-muted-foreground transition-colors hover:text-foreground">
-              {toTitleCase(display.artist)}
-            </button>
-          </div>
-          <div className="flex shrink-0 items-center gap-1 pt-1">
-            <Button variant="ghost" size="icon" onClick={handleToggleLike} aria-label="Like" className={cn("rounded-full text-muted-foreground hover:bg-foreground/10", liked && "text-primary")}>
-              <Heart className="h-[22px] w-[22px]" fill={liked ? "currentColor" : "none"} />
-            </Button>
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/queue")} aria-label="Open queue" className="rounded-full text-muted-foreground hover:bg-foreground/10 hover:text-foreground">
+            <ListMusic className="h-[22px] w-[22px]" />
+          </Button>
+          <div className="flex shrink-0 items-center gap-1">
             <Button variant="ghost" size="icon" onClick={() => setShowPlaylistDialog(true)} aria-label="Add to playlist" className="rounded-full text-muted-foreground hover:bg-foreground/10">
               <Plus className="h-[22px] w-[22px]" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={handleToggleLike} aria-label="Like" className={cn("rounded-full text-muted-foreground hover:bg-foreground/10", liked && "text-primary")}>
+              <Heart className="h-[22px] w-[22px]" fill={liked ? "currentColor" : "none"} />
             </Button>
           </div>
         </div>
       </section>
+
 
       {/* Control deck */}
       <section className="relative z-10 shrink-0 px-6 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-4">

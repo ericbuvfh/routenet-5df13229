@@ -719,6 +719,65 @@ function deferVideos(sections: SectionDescriptor[]): SectionDescriptor[] {
   return out;
 }
 
+/* ------------------------------------------------------------------ */
+/* Circular artist rows, unlocked deeper in the feed                    */
+/* ------------------------------------------------------------------ */
+
+/** Top artists of a Deezer genre, circular cards. */
+const genreArtistsRow = (genreId: number | string, fallbackQuery: string, limit = 20) =>
+  async (): Promise<SectionResult> => {
+    let rows = await getGenreChartArtists(Number(genreId), limit).catch(() => []);
+    if (!rows?.length) rows = await searchArtists(fallbackQuery || "top artists", limit);
+    const seen = new Set<string>();
+    const out = rows.map(transformArtist).filter((a: any) => {
+      const k = (a.name || "").toLowerCase();
+      if (!k || seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+    return { artists: out.slice(0, limit) };
+  };
+
+/**
+ * Five circular artist rows — related artists plus the top artists of the
+ * listener's genres — surfaced after roughly five scrolls of the feed.
+ */
+const ARTIST_ROWS_START_INDEX = 22;
+const ARTIST_ROWS_SPACING = 3;
+
+function circleArtistSections(input: FeedInput): SectionDescriptor[] {
+  const artists = taste(input.followedArtists);
+  const genres = input.followedGenres;
+  const a1 = artists[0] || "";
+  const a2 = artists[1] || a1;
+  const g1 = genres[0];
+  const g2 = genres[1] || g1;
+
+  return pool<SectionDescriptor | null>([
+    a1 ? { id: "circ-related-1", title: `Related to ${a1}`, subtitle: "Artists in the same world", kind: "artists",
+      load: similarArtistList(a1, 20) } : null,
+    g1 ? { id: `circ-genre-top-${g1.id}`, title: `Top ${g1.name} Artists`, subtitle: "Biggest names in your genre", kind: "artists",
+      load: genreArtistsRow(g1.id, `${g1.name} artists`, 20) } : null,
+    a2 ? { id: "circ-related-2", title: `Fans Also Like ${a2}`, subtitle: "Picked from your listening", kind: "artists",
+      load: similarArtistList(a2, 20) } : null,
+    g2 ? { id: `circ-genre-top-2-${g2.id}`, title: `Top ${g2.name} Artists`, subtitle: "Charting in this genre", kind: "artists",
+      load: genreArtistsRow(g2.id, `${g2.name} artists`, 20) } : null,
+    { id: "circ-made-for-you-artists", title: "Artists For You", subtitle: "Close to everything you play", kind: "artists",
+      load: madeForYouArtists(artists, genres, 20) },
+  ]) as SectionDescriptor[];
+}
+
+function insertArtistRows(sections: SectionDescriptor[], rows: SectionDescriptor[]): SectionDescriptor[] {
+  const existing = new Set(sections.map((s) => s.id));
+  const out = sections.slice();
+  rows.filter((r) => !existing.has(r.id)).forEach((r, i) => {
+    const at = ARTIST_ROWS_START_INDEX + i * ARTIST_ROWS_SPACING;
+    if (at >= out.length) out.push(r);
+    else out.splice(at, 0, r);
+  });
+  return out;
+}
+
 export function buildFeed(input: FeedInput, userSeed = "anon"): SectionDescriptor[] {
   const day = Math.floor(Date.now() / (24 * 60 * 60 * 1000));
   const seed = hash(userSeed + ":" + day + ":" + input.followedArtists.join("|"));
@@ -731,7 +790,9 @@ export function buildFeed(input: FeedInput, userSeed = "anon"): SectionDescripto
   // Made For You + Top Picks always sit directly under the quick-access grid.
   const pinned = pinnedSections(input);
   const pinnedIds = new Set(pinned.map((s) => s.id));
-  return deferVideos([...pinned, ...mixed.filter((s) => !pinnedIds.has(s.id))]);
+  const base = deferVideos([...pinned, ...mixed.filter((s) => !pinnedIds.has(s.id))]);
+  return insertArtistRows(base, circleArtistSections(input));
 }
+
 
 
