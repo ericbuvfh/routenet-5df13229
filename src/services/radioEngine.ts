@@ -391,73 +391,73 @@ async function decorate(tracks: Track[]): Promise<Track[]> {
 }
 
 /**
- * Deezer-only candidate generation. Runs in parallel with the AI call so a
+ * YouTube related-streams fallback. Runs in parallel with the AI call so a
  * queue is never short (and stays full even when every AI provider is down).
+ * Candidates come straight from the seed song's YouTube related graph via the
+ * `piped-radio` edge function — no Deezer catalogue lookups on this path.
  */
-async function deezerCandidates(seed: Track | null): Promise<Suggestion[]> {
-  const seedArtist = seed?.artist || followedArtists()[0] || "";
-  const tasteArtists = [...new Set([seedArtist, ...followedArtists()].filter(Boolean))].slice(0, 4);
+async function youtubeCandidates(seed: Track | null): Promise<Suggestion[]> {
+  const title = seed?.title || "";
+  const artist = seed?.artist || followedArtists()[0] || "";
+  if (!title && !artist) return [];
 
-  const ids = (await Promise.all(tasteArtists.map((a) => resolveArtistId(a).catch(() => null))))
-    .filter(Boolean) as number[];
+  const { data, error } = await supabase.functions.invoke("piped-radio", {
+    body: { title, artist, videoId: videoIdOf(seed), fanout: 2 },
+  });
+  if (error || !data?.candidates?.length) return [];
 
-  const jobs: Promise<any[]>[] = [
-    getChart(40).catch(() => []),
-    getEditorialSelection(0, 30).catch(() => []),
-  ];
-  for (const id of ids) {
-    jobs.push(getArtistRadio(id, 25).catch(() => []));
-    jobs.push(getArtistTopTracks(id, 10).catch(() => []));
-  }
-  // Related artists → their top tracks (one hop, capped for latency).
-  const relatedTop = (async () => {
-    const rel = (await Promise.all(ids.slice(0, 2).map((id) => getArtistRelated(id, 4).catch(() => []))))
-      .flat()
-      .slice(0, 6);
-    const lists = await Promise.all(
-      rel.map((a: any) => getArtistTopTracks(a.id, 5).catch(() => [])),
-    );
-    return lists.flat();
-  })();
-  jobs.push(relatedTop);
-
-  const roles: string[] = ["trending", "recent", ...ids.flatMap(() => ["related", "fanfav"]), "hidden"];
-  const lists = await Promise.all(jobs);
+  const roleFor = (bucket?: string): string => {
+    switch (bucket) {
+      case "trending": return "trending";
+      case "recent": return "recent";
+      case "classic": return "classic";
+      default: return "related";
+    }
+  };
 
   const out: Suggestion[] = [];
-  lists.forEach((rows, i) => {
-    const role = roles[i] || "related";
-    for (const raw of rows || []) {
-      if (!raw?.title) continue;
-      const track = transformTrack(raw) as Track;
-      out.push({ title: track.title, artist: track.artist, role, track });
-    }
-  });
+  for (const c of data.candidates as any[]) {
+    if (!c?.title || !c?.videoId) continue;
+    const t = toTitleCase(String(c.title));
+    const a = toTitleCase(String(c.artist || ""));
+    if (!a) continue;
+    out.push({
+      title: t,
+      artist: a,
+      role: roleFor(c.bucket),
+      track: {
+        id: `yt-${c.videoId}`,
+        title: t,
+        artist: a,
+        album: "",
+        artwork: c.thumbnail || "/placeholder.svg",
+        duration: Number(c.duration) || 0,
+        youtubeId: c.videoId,
+      } as Track,
+    });
+  }
   return out;
 }
 
 async function buildBatch(seed: Track | null, existing: Track[], limit: number): Promise<Track[]> {
   const excludeKeys = new Set<string>(existing.map((t) => songKey(t.title, t.artist)));
   if (seed) excludeKeys.add(songKey(seed.title, seed.artist));
-  const excludeTitles = existing.slice(-40).map((t) => `${t.title} — ${t.artist}`);
+  const excludeTitles = existing.slice(-24).map((t) => `${t.title} — ${t.artist}`);
 
-  // Speed: both AI passes and the Deezer fallback run concurrently instead of
-  // one after another, so a 100-song queue lands in a single round trip.
-  const aiCount = Math.min(70, Math.max(40, Math.ceil(limit * 0.75)));
-  const [aiA, aiB, dz] = await Promise.all([
+  // Speed: one AI pass plus the YouTube related fallback, both in flight at
+  // the same time, so a full queue lands in a single round trip.
+  const aiCount = Math.min(60, Math.max(35, Math.ceil(limit * 0.7)));
+  const [ai, yt] = await Promise.all([
     askAI(seed, excludeTitles, aiCount).catch(() => [] as Suggestion[]),
-    limit > 45
-      ? askAI(seed, excludeTitles, aiCount).catch(() => [] as Suggestion[])
-      : Promise.resolve([] as Suggestion[]),
-    deezerCandidates(seed).catch(() => [] as Suggestion[]),
+    youtubeCandidates(seed).catch(() => [] as Suggestion[]),
   ]);
 
-  // AI suggestions first (better curation), Deezer fills whatever is missing.
-  let pool = prepare([...aiA, ...aiB, ...dz], excludeKeys);
+  // AI suggestions first (better curation), YouTube fills whatever is missing.
+  let pool = prepare([...ai, ...yt], excludeKeys);
 
   // Last resort: if cooldowns emptied everything, ignore the per-queue history.
   if (pool.length < Math.min(limit, 20)) {
-    const relaxed = prepare([...aiA, ...aiB, ...dz], new Set<string>());
+    const relaxed = prepare([...ai, ...yt], new Set<string>());
     const seen = new Set(pool.map((p) => p.key));
     pool = [...pool, ...relaxed.filter((p) => !seen.has(p.key))];
   }
@@ -467,6 +467,7 @@ async function buildBatch(seed: Track | null, existing: Track[], limit: number):
   rememberQueue(arranged.map((c) => c.key));
   return decorate(arranged.map((c) => toTrack(c, seed)));
 }
+
 
 
 /* ------------------------------------------------------------------ */
