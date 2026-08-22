@@ -182,11 +182,18 @@ export default function Library() {
 
       {/* Header — Spotify style */}
       <div className={`px-4 ${isOffline ? "pt-2" : "pt-12"} pb-3`}>
-        <div className="flex items-center justify-between mb-3">
-          <h1 className="text-2xl font-extrabold text-foreground">Your Library</h1>
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate("/search")}><Search className="h-5 w-5 text-foreground" /></button>
-            <button onClick={() => navigate("/create-playlist")}><Plus className="h-5 w-5 text-foreground" /></button>
+        <div className="mb-4 flex items-center gap-3">
+          <button onClick={() => navigate("/profile")} aria-label="Profile" className="h-8 w-8 shrink-0 overflow-hidden rounded-full bg-muted/30 ring-1 ring-border/40">
+            {likedArtists[0]?.avatar ? (
+              <img src={likedArtists[0].avatar} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center text-[12px] font-bold text-foreground">R</span>
+            )}
+          </button>
+          <h1 className="flex-1 text-[24px] font-extrabold leading-tight tracking-[-0.01em] text-foreground">Your Library</h1>
+          <div className="flex items-center gap-4">
+            <button onClick={() => navigate("/search")} aria-label="Search"><Search className="h-[22px] w-[22px] text-foreground" /></button>
+            <button onClick={() => navigate("/create-playlist")} aria-label="Create playlist"><Plus className="h-[22px] w-[22px] text-foreground" /></button>
           </div>
         </div>
 
@@ -194,7 +201,7 @@ export default function Library() {
         <div className="flex gap-2 overflow-x-auto scrollbar-hide">
           {(["All", ...FILTERS] as const).map(filter => (
             <button key={filter} onClick={() => setActiveFilter(filter)}
-              className={`rounded-full px-4 py-1.5 text-xs font-medium whitespace-nowrap transition-colors ${
+              className={`rounded-full px-4 py-[7px] text-[13px] font-medium whitespace-nowrap transition-colors ${
                 activeFilter === filter ? "bg-foreground text-background" : "bg-muted/20 text-foreground border border-border/20"
               }`}>
               {filter}
@@ -204,13 +211,16 @@ export default function Library() {
       </div>
 
       {/* Sort indicator */}
-      <div className="px-4 mb-2">
-        <p className="text-xs text-muted-foreground">↕ Recents</p>
+      <div className="mb-1 flex items-center justify-between px-4">
+        <button className="flex items-center gap-2 text-[13px] font-medium text-foreground">
+          <ArrowDownUp className="h-4 w-4" /> Recently played
+        </button>
+        <LayoutGrid className="h-[18px] w-[18px] text-foreground" />
       </div>
 
 
       {/* Unified vertical list — Spotify style */}
-      <div className="px-4">
+      <div className="px-2">
         {loadingPlaylists ? (
           <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
         ) : allItems.length > 0 ? (
@@ -218,23 +228,24 @@ export default function Library() {
             {allItems.map((item, i) => (
               <motion.button key={item.id + i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
                 onClick={item.onClick}
-                className="flex w-full items-center gap-3 rounded-lg p-2 text-left hover:bg-muted/15 transition-colors">
+                className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted/15">
                 {item.artwork ? (
-                  <div className={`h-12 w-12 flex-shrink-0 overflow-hidden ${item.type === "artist" ? "rounded-full" : "rounded-md"}`}>
+                  <div className={`h-14 w-14 flex-shrink-0 overflow-hidden ${item.type === "artist" ? "rounded-full" : "rounded-[4px]"}`}>
                     <img src={item.artwork} alt="" className="h-full w-full object-cover" loading="lazy" />
                   </div>
                 ) : (
-                  <div className="h-12 w-12 flex-shrink-0 rounded-md bg-muted/20 flex items-center justify-center">
+                  <div className={`flex h-14 w-14 flex-shrink-0 items-center justify-center bg-muted/20 ${item.type === "artist" ? "rounded-full" : "rounded-[4px]"}`}>
                     <Music2 className="h-5 w-5 text-muted-foreground" />
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-foreground">{item.title}</p>
-                  <p className="truncate text-xs text-muted-foreground">{item.subtitle}</p>
+                  <p className="truncate text-[16px] font-normal leading-[21px] text-foreground">{item.title}</p>
+                  <p className="truncate text-[13px] font-normal leading-[18px] text-muted-foreground">{item.subtitle}</p>
                 </div>
               </motion.button>
             ))}
           </div>
+
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Music2 className="h-12 w-12 text-muted-foreground/40 mb-3" />
