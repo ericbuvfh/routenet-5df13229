@@ -391,52 +391,19 @@ async function decorate(tracks: Track[]): Promise<Track[]> {
 }
 
 /**
- * YouTube related-streams fallback. Runs in parallel with the AI call so a
- * queue is never short (and stays full even when every AI provider is down).
- * Candidates come straight from the seed song's YouTube related graph via the
- * `piped-radio` edge function — no Deezer catalogue lookups on this path.
+ * Local fallback — no external API at all. When the AI engine is unavailable
+ * (offline, provider down, rate limited) the queue is built from the
+ * listener's own data: liked songs, listening history, searched songs and the
+ * artists followed during onboarding.
  */
-async function youtubeCandidates(seed: Track | null): Promise<Suggestion[]> {
-  const title = seed?.title || "";
-  const artist = seed?.artist || followedArtists()[0] || "";
-  if (!title && !artist) return [];
-
-  const { data, error } = await supabase.functions.invoke("piped-radio", {
-    body: { title, artist, videoId: videoIdOf(seed), fanout: 2 },
-  });
-  if (error || !data?.candidates?.length) return [];
-
-  const roleFor = (bucket?: string): string => {
-    switch (bucket) {
-      case "trending": return "trending";
-      case "recent": return "recent";
-      case "classic": return "classic";
-      default: return "related";
-    }
-  };
-
-  const out: Suggestion[] = [];
-  for (const c of data.candidates as any[]) {
-    if (!c?.title || !c?.videoId) continue;
-    const t = toTitleCase(String(c.title));
-    const a = toTitleCase(String(c.artist || ""));
-    if (!a) continue;
-    out.push({
-      title: t,
-      artist: a,
-      role: roleFor(c.bucket),
-      track: {
-        id: `yt-${c.videoId}`,
-        title: t,
-        artist: a,
-        album: "",
-        artwork: c.thumbnail || "/placeholder.svg",
-        duration: Number(c.duration) || 0,
-        youtubeId: c.videoId,
-      } as Track,
-    });
-  }
-  return out;
+async function localCandidates(seed: Track | null, limit: number): Promise<Suggestion[]> {
+  const tracks = await getFallbackRecommendations(Math.max(limit, 30), seed).catch(() => [] as Track[]);
+  return tracks.map((t) => ({
+    title: t.title,
+    artist: t.artist,
+    role: "related",
+    track: t,
+  }));
 }
 
 async function buildBatch(seed: Track | null, existing: Track[], limit: number): Promise<Track[]> {
@@ -444,20 +411,22 @@ async function buildBatch(seed: Track | null, existing: Track[], limit: number):
   if (seed) excludeKeys.add(songKey(seed.title, seed.artist));
   const excludeTitles = existing.slice(-24).map((t) => `${t.title} — ${t.artist}`);
 
-  // Speed: one AI pass plus the YouTube related fallback, both in flight at
-  // the same time, so a full queue lands in a single round trip.
   const aiCount = Math.min(60, Math.max(35, Math.ceil(limit * 0.7)));
-  const [ai, yt] = await Promise.all([
-    askAI(seed, excludeTitles, aiCount).catch(() => [] as Suggestion[]),
-    youtubeCandidates(seed).catch(() => [] as Suggestion[]),
-  ]);
+  const ai = await askAI(seed, excludeTitles, aiCount).catch(() => [] as Suggestion[]);
 
-  // AI suggestions first (better curation), YouTube fills whatever is missing.
-  let pool = prepare([...ai, ...yt], excludeKeys);
+  let pool = prepare(ai, excludeKeys);
+
+  // AI unavailable or too thin — fill from the user's own library, shuffled.
+  if (pool.length < Math.min(limit, 12)) {
+    const local = await localCandidates(seed, limit);
+    const seen = new Set(pool.map((p) => p.key));
+    pool = [...pool, ...prepare(local, excludeKeys).filter((p) => !seen.has(p.key))];
+  }
 
   // Last resort: if cooldowns emptied everything, ignore the per-queue history.
-  if (pool.length < Math.min(limit, 20)) {
-    const relaxed = prepare([...ai, ...yt], new Set<string>());
+  if (pool.length < Math.min(limit, 8)) {
+    const local = await localCandidates(seed, limit);
+    const relaxed = prepare([...ai, ...local], new Set<string>());
     const seen = new Set(pool.map((p) => p.key));
     pool = [...pool, ...relaxed.filter((p) => !seen.has(p.key))];
   }
@@ -467,6 +436,7 @@ async function buildBatch(seed: Track | null, existing: Track[], limit: number):
   rememberQueue(arranged.map((c) => c.key));
   return decorate(arranged.map((c) => toTrack(c, seed)));
 }
+
 
 
 
