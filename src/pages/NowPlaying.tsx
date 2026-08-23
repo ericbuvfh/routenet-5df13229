@@ -242,36 +242,20 @@ export default function NowPlaying() {
           </Button>
         </div>
 
-        <div className="mt-4 flex items-center justify-between text-muted-foreground">
-          <button
-            type="button"
-            onClick={handleDownload}
-            aria-label={downloadStatus === "done" ? "Downloaded" : "Download"}
-            className={cn("flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-foreground/10 hover:text-foreground", downloadStatus === "done" && "text-primary")}
-          >
-            {downloadStatus === "downloading" ? <Loader2 className="h-[18px] w-[18px] animate-spin" /> : <ArrowDownCircle className="h-[18px] w-[18px]" />}
-          </button>
-          <button type="button" onClick={() => setShowShareSheet(true)} aria-label="Share" className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-foreground/10 hover:text-foreground">
-            <Share2 className="h-[18px] w-[18px]" />
-          </button>
-          <button type="button" onClick={() => navigate("/queue")} aria-label="Open queue" className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-foreground/10 hover:text-foreground">
-            <ListMusic className="h-[18px] w-[18px]" />
-          </button>
-        </div>
-
         {/* Lyrics bar */}
         <button
           type="button"
           onClick={() => navigate("/lyrics")}
-          className="mt-3 flex w-full items-center justify-between rounded-xl bg-foreground/[0.07] px-4 py-3 text-left transition-colors hover:bg-foreground/[0.12]"
+          className="mt-4 flex w-full items-center justify-between rounded-xl bg-foreground/[0.07] px-4 py-3 text-left transition-colors hover:bg-foreground/[0.12] active:scale-[0.99]"
         >
           <span className="flex items-center gap-2 text-[14px] font-semibold text-foreground">
-            <Mic2 className="h-4 w-4" /> Lyrics
+            <Mic2 className="h-4 w-4" /> Show Lyrics
           </span>
-          <span className="text-[12px] text-muted-foreground">
+          <span className="max-w-[45%] truncate text-[12px] text-muted-foreground">
             {nextTrack ? `Next: ${toTitleCase(nextTrack.title)}` : ""}
           </span>
         </button>
+
       </section>
 
 
