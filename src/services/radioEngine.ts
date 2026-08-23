@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getTopSignalArtists, getRecentSignals } from "@/services/tasteEvents";
 import { enrichTracks } from "@/services/metadataEnrichment";
 import { toTitleCase } from "@/utils/toTitleCase";
+import { getFallbackRecommendations } from "@/services/fallbackRecommendation";
 
 
 
@@ -57,7 +58,7 @@ interface Suggestion {
   artist: string;
   role?: string;
   reason?: string;
-  /** Already-resolved metadata (YouTube related fallback path). */
+  /** Already-resolved metadata (local fallback path). */
   track?: Track;
 }
 
