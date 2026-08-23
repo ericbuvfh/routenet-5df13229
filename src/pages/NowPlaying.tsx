@@ -42,6 +42,8 @@ export default function NowPlaying() {
   const [meta, setMeta] = useState<DeezerMeta | null>(null);
 
   useEffect(() => setLocalProgress(progress), [progress]);
+  // Snap the ring back to zero the instant the user skips forward/back.
+  useEffect(() => setLocalProgress(0), [currentTrack?.id]);
 
   // Now Playing shows Deezer metadata when it resolves; YouTube data is the fallback.
   useEffect(() => {
@@ -146,12 +148,18 @@ export default function NowPlaying() {
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Back" className="rounded-full text-foreground hover:bg-foreground/10">
           <ChevronDown className="h-6 w-6" />
         </Button>
-        <div className="min-w-0 flex-1 text-center">
+        <motion.div
+          key={currentTrack.id}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22 }}
+          className="min-w-0 flex-1 text-center"
+        >
           <h1 className="truncate text-[16px] font-bold leading-tight text-foreground">{toTitleCase(display.title)}</h1>
           <button onClick={() => navigate(`/artist/${encodeURIComponent(display.artist)}`)} className="mx-auto block max-w-full truncate text-[12px] font-normal text-muted-foreground transition-colors hover:text-foreground">
             {toTitleCase(display.artist)}
           </button>
-        </div>
+        </motion.div>
         <Button variant="ghost" size="icon" onClick={() => setShowMore(true)} aria-label="More" className="rounded-full text-foreground hover:bg-foreground/10">
           <MoreHorizontal className="h-6 w-6" />
         </Button>
@@ -160,9 +168,10 @@ export default function NowPlaying() {
       {/* Compact circular artwork inside a progress ring */}
       <section className="relative z-10 flex min-h-0 flex-1 items-center justify-center px-6 py-4">
         <motion.div
-          initial={{ scale: 0.96, opacity: 0 }}
+          key={currentTrack.id}
+          initial={{ scale: 0.94, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 200, damping: 24 }}
+          transition={{ type: "spring", stiffness: 220, damping: 24 }}
           className="relative aspect-square w-[min(62vw,34dvh,260px)]"
         >
           <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full -rotate-90">
@@ -223,7 +232,7 @@ export default function NowPlaying() {
           <Button variant="ghost" size="icon" onClick={toggleShuffle} aria-label="Shuffle" aria-pressed={shuffle} className={cn("h-11 w-11 rounded-full text-muted-foreground hover:bg-foreground/10 hover:text-foreground", shuffle && "text-primary")}>
             <Shuffle className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={previous} aria-label="Previous track" className="h-12 w-12 rounded-full text-foreground hover:bg-foreground/10">
+          <Button variant="ghost" size="icon" onClick={previous} aria-label="Previous track" className="h-12 w-12 rounded-full text-foreground transition-transform hover:bg-foreground/10 active:scale-90">
             <SkipBack className="h-7 w-7" fill="currentColor" />
           </Button>
           <Button
@@ -234,7 +243,7 @@ export default function NowPlaying() {
           >
             {isResolving ? <Loader2 className="h-7 w-7 animate-spin" /> : isPlaying ? <Pause className="h-7 w-7" fill="currentColor" /> : <Play className="ml-1 h-7 w-7" fill="currentColor" />}
           </Button>
-          <Button variant="ghost" size="icon" onClick={next} aria-label="Next track" className="h-12 w-12 rounded-full text-foreground hover:bg-foreground/10">
+          <Button variant="ghost" size="icon" onClick={next} aria-label="Next track" className="h-12 w-12 rounded-full text-foreground transition-transform hover:bg-foreground/10 active:scale-90">
             <SkipForward className="h-7 w-7" fill="currentColor" />
           </Button>
           <Button variant="ghost" size="icon" onClick={toggleRepeat} aria-label={`Repeat: ${repeat}`} className={cn("h-11 w-11 rounded-full text-muted-foreground hover:bg-foreground/10 hover:text-foreground", repeat !== "off" && "text-primary")}>
