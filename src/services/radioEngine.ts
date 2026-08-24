@@ -325,19 +325,25 @@ function bucketOf(role?: string): Bucket {
 
 interface Scored extends Suggestion { key: string; bucket: Bucket }
 
-function prepare(list: Suggestion[], excludeKeys: Set<string>): Scored[] {
+/**
+ * Filter candidates. `strict` also enforces the 7-day recommended-song block
+ * so the engine keeps finding new material instead of repeating itself.
+ */
+function prepare(list: Suggestion[], excludeKeys: Set<string>, strict = true): Scored[] {
   const seen = new Set<string>();
   const out: Scored[] = [];
   const recent = recentQueueSongs();
   for (const s of list) {
     const key = songKey(s.title, s.artist);
     if (!key || seen.has(key) || excludeKeys.has(key)) continue;
-    if (onCooldown(key) || recent.has(key)) continue;
+    if (strict && isRecentlyRecommended(key)) continue;
+    if (strict && (onCooldown(key) || recent.has(key))) continue;
     seen.add(key);
     out.push({ ...s, key, bucket: bucketOf(s.role) });
   }
   return out;
 }
+
 
 /** Pick the target number per bucket, then interleave in DJ rotation. */
 function arrange(pool: Scored[], limit: number): Scored[] {
