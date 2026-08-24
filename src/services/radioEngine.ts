@@ -251,17 +251,52 @@ function tasteSignals() {
   }
 }
 
-async function askAI(seed: Track | null, exclude: string[], count: number): Promise<Suggestion[]> {
+/** Albums the listener saved in their library. */
+function savedAlbums(): string[] {
+  try {
+    const raw = JSON.parse(localStorage.getItem("tunestream_liked_albums") || "[]");
+    return (Array.isArray(raw) ? raw : [])
+      .map((a: any) => `${a?.title ?? ""} — ${a?.artist ?? ""}`.trim())
+      .filter((s: string) => s.length > 3)
+      .slice(0, 20);
+  } catch {
+    return [];
+  }
+}
+
+interface LibraryContext {
+  liked: Track[];
+  recent: Track[];
+  albums: string[];
+}
+
+async function libraryContext(): Promise<LibraryContext> {
+  const liked = await getLikedSongs().catch(() => [] as Track[]);
+  return { liked: liked.slice(0, 60), recent: getRecentlyPlayed(25), albums: savedAlbums() };
+}
+
+const label = (t: Track) => `${t.title} — ${t.artist}`;
+
+async function askAI(
+  seed: Track | null,
+  exclude: string[],
+  count: number,
+  ctx: LibraryContext,
+): Promise<Suggestion[]> {
   const { data, error } = await supabase.functions.invoke("ai-recommend", {
     body: {
       seed: seed ? { title: seed.title, artist: seed.artist } : null,
       signals: tasteSignals(),
       followedArtists: followedArtists(),
-      excludeTitles: exclude.slice(0, 60),
+      likedSongs: ctx.liked.slice(0, 30).map(label),
+      recentlyPlayed: ctx.recent.slice(0, 20).map(label),
+      savedAlbums: ctx.albums,
+      excludeTitles: exclude.slice(0, 120),
       distribution: MIX,
       count,
     },
   });
+
   if (error) return [];
   const rows = Array.isArray((data as any)?.tracks) ? (data as any).tracks : [];
   return rows
