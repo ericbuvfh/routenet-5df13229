@@ -19,7 +19,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { getTopSignalArtists, getRecentSignals } from "@/services/tasteEvents";
 import { enrichTracks } from "@/services/metadataEnrichment";
 import { toTitleCase } from "@/utils/toTitleCase";
-import { getFallbackRecommendations } from "@/services/fallbackRecommendation";
+import { getFallbackRecommendations, getLikedSongs, getRecentlyPlayed } from "@/services/fallbackRecommendation";
+import { isRecentlyRecommended, rememberRecommended } from "@/services/recommendedSongs";
+
 
 
 
