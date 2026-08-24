@@ -450,13 +450,43 @@ async function localCandidates(seed: Track | null, limit: number): Promise<Sugge
   }));
 }
 
+/** Up to 15% of every queue comes from the listener's own library. */
+function libraryPicks(ctx: LibraryContext, limit: number, excludeKeys: Set<string>): Scored[] {
+  const target = Math.max(1, Math.round(limit * 0.15));
+  const pool = [...ctx.liked, ...ctx.recent];
+  const seen = new Set<string>();
+  const out: Scored[] = [];
+  for (const t of pool.sort(() => Math.random() - 0.5)) {
+    if (!t?.title || !t?.artist) continue;
+    const key = songKey(t.title, t.artist);
+    if (!key || seen.has(key) || excludeKeys.has(key)) continue;
+    seen.add(key);
+    out.push({ title: t.title, artist: t.artist, role: "fanfav", track: t, key, bucket: "fanfav" });
+    if (out.length >= target) break;
+  }
+  return out;
+}
+
+/** Spread the library picks evenly through the AI queue. */
+function weave(main: Scored[], extras: Scored[]): Scored[] {
+  if (!extras.length) return main;
+  const out = [...main];
+  const step = Math.max(3, Math.floor(out.length / (extras.length + 1)));
+  extras.forEach((e, i) => {
+    const at = Math.min(out.length, (i + 1) * step + i);
+    out.splice(at, 0, e);
+  });
+  return out;
+}
+
 async function buildBatch(seed: Track | null, existing: Track[], limit: number): Promise<Track[]> {
   const excludeKeys = new Set<string>(existing.map((t) => songKey(t.title, t.artist)));
   if (seed) excludeKeys.add(songKey(seed.title, seed.artist));
   const excludeTitles = existing.slice(-24).map((t) => `${t.title} — ${t.artist}`);
 
+  const ctx = await libraryContext();
   const aiCount = Math.min(60, Math.max(35, Math.ceil(limit * 0.7)));
-  const ai = await askAI(seed, excludeTitles, aiCount).catch(() => [] as Suggestion[]);
+  const ai = await askAI(seed, excludeTitles, aiCount, ctx).catch(() => [] as Suggestion[]);
 
   let pool = prepare(ai, excludeKeys);
 
@@ -467,19 +497,26 @@ async function buildBatch(seed: Track | null, existing: Track[], limit: number):
     pool = [...pool, ...prepare(local, excludeKeys).filter((p) => !seen.has(p.key))];
   }
 
-  // Last resort: if cooldowns emptied everything, ignore the per-queue history.
+  // Last resort: relax cooldowns and the 7-day recommended block.
   if (pool.length < Math.min(limit, 8)) {
     const local = await localCandidates(seed, limit);
-    const relaxed = prepare([...ai, ...local], new Set<string>());
+    const relaxed = prepare([...ai, ...local], new Set<string>(), false);
     const seen = new Set(pool.map((p) => p.key));
     pool = [...pool, ...relaxed.filter((p) => !seen.has(p.key))];
   }
 
   if (!pool.length) return [];
-  const arranged = arrange(pool, limit);
+
+  // 15% of the queue is the listener's own liked songs / recent plays.
+  const own = libraryPicks(ctx, limit, new Set([...excludeKeys, ...pool.map((p) => p.key)]));
+  const arranged = weave(arrange(pool, Math.max(1, limit - own.length)), own).slice(0, limit);
+
   rememberQueue(arranged.map((c) => c.key));
+  // Everything recommended here is unavailable for the next 7 days.
+  rememberRecommended(arranged.filter((c) => !c.track).map((c) => c.key));
   return decorate(arranged.map((c) => toTrack(c, seed)));
 }
+
 
 
 
