@@ -7,9 +7,11 @@
  *
  *   1. Liked songs (highest priority) — Supabase `liked_songs` + localStorage
  *   2. Recently played — local listening history
- *   3. Songs from cached searches the user ran (their own discovery trail)
- *   4. Followed artists — the artists picked during onboarding, matched
+ *   3. Followed artists — the artists picked during onboarding, matched
  *      against everything above
+ *
+ * Search history is NEVER used as a recommendation source: searching for a
+ * song does not mean the listener wants it recommended back to them.
  *
  * The merged list is deduplicated, weighted (all likes, a subset of the rest)
  * and shuffled so every fallback session feels fresh.
@@ -17,7 +19,7 @@
 import type { Track } from "@/data/mockData";
 import { supabase } from "@/integrations/supabase/client";
 import { getListeningHistory } from "@/hooks/useListeningHistory";
-import { getRecentSearchItems, readSearchCache } from "@/services/searchCache";
+
 
 export function shuffleArray<T>(array: T[]): T[] {
   const arr = [...array];

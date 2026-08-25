@@ -283,14 +283,43 @@ export default function Search() {
   const showPlaylists = activeFilter === 'all' || activeFilter === 'playlists';
   const showMixes = activeFilter === 'mixes';
 
-  // Find the top result across all types
+  // Find the top result across all types (songs, artists, albums, playlists),
+  // with duplicates removed: one row per artist, one row per title+artist song.
+  const normKey = (s: string) => (s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+  const seenTrackKeys = new Set<string>();
+  const dedupedTracks = filteredTracks.filter((t) => {
+    const k = `${normKey(t.title)}::${normKey(t.artist)}`;
+    if (!k.trim() || seenTrackKeys.has(k)) return false;
+    seenTrackKeys.add(k);
+    return true;
+  });
+
+  const seenArtistKeys = new Set<string>();
+  const dedupedArtists = filteredArtists.filter((a) => {
+    const k = normKey(a.name);
+    if (!k || seenArtistKeys.has(k)) return false;
+    seenArtistKeys.add(k);
+    return true;
+  });
+
+  const seenAlbumKeys = new Set<string>();
+  const dedupedAlbums = filteredAlbums.filter((a) => {
+    const k = `${normKey(a.title)}::${normKey(a.artist)}`;
+    if (!k.trim() || seenAlbumKeys.has(k)) return false;
+    seenAlbumKeys.add(k);
+    return true;
+  });
+
   const topItems = [
-    ...filteredTracks.map(t => ({ type: 'track' as const, score: scoreMatch(debouncedQuery, t), item: t })),
-    ...filteredArtists.map(a => ({ type: 'artist' as const, score: scoreMatch(debouncedQuery, { name: a.name }), item: a })),
+    ...dedupedTracks.map(t => ({ type: 'track' as const, score: scoreMatch(debouncedQuery, t), item: t })),
+    ...dedupedArtists.map(a => ({ type: 'artist' as const, score: scoreMatch(debouncedQuery, { name: a.name }), item: a })),
+    ...dedupedAlbums.map(a => ({ type: 'album' as const, score: scoreMatch(debouncedQuery, { title: a.title, artist: a.artist }), item: a })),
     ...matchingPlaylists.map(p => ({ type: 'playlist' as const, score: scoreMatch(debouncedQuery, { title: p.name }), item: p })),
   ].sort((a, b) => b.score - a.score);
 
   const topResult = topItems[0];
+
 
 
   return (
@@ -429,6 +458,24 @@ export default function Search() {
                       </motion.div>
                     );
                   }
+                  if (entry.type === 'album') {
+                    const al = entry.item as Album;
+                    return (
+                      <motion.div key={`al-${al.id}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
+                        className="flex cursor-pointer items-center gap-3 py-2"
+                        onClick={() => {
+                          addRecentSearchItem({ id: String(al.id), kind: "album", title: al.title, subtitle: `Album • ${al.artist}`, artwork: al.artwork, query: al.title });
+                          navigate(`/album/${al.id.toString().replace("deezer-", "")}`);
+                        }}>
+                        <img src={al.artwork} alt="" loading="lazy" className="h-[52px] w-[52px] shrink-0 rounded-[3px] bg-muted/30 object-cover" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[16px] font-normal leading-tight text-foreground">{al.title}</p>
+                          <p className="mt-1 truncate text-[13px] text-muted-foreground">Album • {al.artist}</p>
+                        </div>
+                      </motion.div>
+                    );
+                  }
+
                   if (entry.type === 'playlist') {
                     const p = entry.item as any;
                     return (
@@ -455,9 +502,9 @@ export default function Search() {
           )}
 
           {/* Filtered views */}
-          {showArtists && activeFilter === 'artists' && filteredArtists.length > 0 && (
+          {showArtists && activeFilter === 'artists' && dedupedArtists.length > 0 && (
             <section><h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Artists</h2>
-              <div>{filteredArtists.map((a, i) => (
+              <div>{dedupedArtists.map((a, i) => (
                 <motion.div key={a.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
                   className="flex cursor-pointer items-center gap-3 py-2" onClick={() => navigate(`/artist/${encodeURIComponent(a.name)}`)}>
                   <img src={a.avatar} alt="" className="h-[52px] w-[52px] shrink-0 rounded-full bg-muted/30 object-cover" />
@@ -469,9 +516,9 @@ export default function Search() {
               ))}</div>
             </section>
           )}
-          {showTracks && activeFilter === 'tracks' && filteredTracks.length > 0 && (
+          {showTracks && activeFilter === 'tracks' && dedupedTracks.length > 0 && (
             <section><h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Songs</h2>
-              <div>{filteredTracks.map((t, i) => (
+              <div>{dedupedTracks.map((t, i) => (
                 <motion.div key={t.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.02, 0.3) }}
                   className="group flex cursor-pointer items-center gap-3 py-2"
                   onClick={() => playTrack(t, filteredTracks)}>
@@ -496,9 +543,9 @@ export default function Search() {
               ))}</div>
             </section>
           )}
-          {showAlbums && activeFilter === 'albums' && filteredAlbums.length > 0 && (
+          {showAlbums && activeFilter === 'albums' && dedupedAlbums.length > 0 && (
             <section><h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Albums</h2>
-              <div>{filteredAlbums.map((a, i) => (
+              <div>{dedupedAlbums.map((a, i) => (
                 <motion.div key={a.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
                   className="flex cursor-pointer items-center gap-3 py-2" onClick={() => navigate(`/album/${a.id.toString().replace("deezer-", "")}`)}>
                   <img src={a.artwork} alt="" className="h-[52px] w-[52px] shrink-0 rounded-[3px] bg-muted/30 object-cover" />
