@@ -165,14 +165,14 @@ export default function NowPlaying() {
         </Button>
       </header>
 
-      {/* Compact circular artwork inside a progress ring */}
-      <section className="relative z-10 flex min-h-0 flex-1 items-center justify-center px-6 py-4">
+      {/* Old-school vinyl artwork inside a progress ring */}
+      <section className="relative z-10 flex min-h-0 flex-1 items-center justify-center px-6 pb-2 pt-2">
         <motion.div
           key={currentTrack.id}
           initial={{ scale: 0.94, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 220, damping: 24 }}
-          className="relative aspect-square w-[min(62vw,34dvh,260px)]"
+          className="relative aspect-square w-[min(76vw,40dvh,320px)]"
         >
           <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full -rotate-90">
             <circle cx="50" cy="50" r={RING_R} fill="none" stroke="hsl(var(--foreground) / 0.12)" strokeWidth="2.5" />
@@ -183,17 +183,43 @@ export default function NowPlaying() {
               strokeDashoffset={RING_C * (1 - Math.min(Math.max(localProgress, 0), 1))}
             />
           </svg>
-          <div className="absolute inset-[7%] overflow-hidden rounded-full bg-card album-shadow">
-            {isResolving ? (
-              <div className="flex h-full w-full items-center justify-center bg-secondary">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : (
-              <img src={display.artwork} alt={display.title} className="h-full w-full object-cover" />
-            )}
-          </div>
+
+          {/* Vinyl disc */}
+          <motion.div
+            className="absolute inset-[6%] overflow-hidden rounded-full album-shadow"
+            style={{ background: "radial-gradient(circle at 50% 50%, hsl(0 0% 8%) 0%, hsl(0 0% 4%) 100%)" }}
+            animate={isPlaying ? { rotate: 360 } : { rotate: 0 }}
+            transition={isPlaying ? { duration: 14, repeat: Infinity, ease: "linear" } : { duration: 0.4 }}
+          >
+            {/* Grooves */}
+            <div
+              className="pointer-events-none absolute inset-0 rounded-full opacity-70"
+              style={{
+                background:
+                  "repeating-radial-gradient(circle at 50% 50%, hsl(0 0% 100% / 0.075) 0px, hsl(0 0% 100% / 0.075) 1px, transparent 1px, transparent 5px)",
+              }}
+            />
+            {/* Sheen */}
+            <div
+              className="pointer-events-none absolute inset-0 rounded-full"
+              style={{ background: "linear-gradient(115deg, hsl(0 0% 100% / 0.14) 0%, transparent 38%, transparent 62%, hsl(0 0% 100% / 0.08) 100%)" }}
+            />
+            {/* Centre label = artwork */}
+            <div className="absolute inset-[27%] overflow-hidden rounded-full border border-foreground/15 bg-card shadow-[0_6px_20px_-6px_hsl(0_0%_0%/0.8)]">
+              {isResolving ? (
+                <div className="flex h-full w-full items-center justify-center bg-secondary">
+                  <Loader2 className="h-7 w-7 animate-spin text-primary" />
+                </div>
+              ) : (
+                <img src={display.artwork} alt={display.title} className="h-full w-full object-cover" />
+              )}
+            </div>
+            {/* Spindle hole */}
+            <div className="absolute left-1/2 top-1/2 h-[4.5%] w-[4.5%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-background shadow-[inset_0_0_3px_hsl(0_0%_0%/0.9)]" />
+          </motion.div>
         </motion.div>
       </section>
+
 
       {/* Actions row */}
       <section className="relative z-10 shrink-0 px-6">
