@@ -240,7 +240,7 @@ export default function NowPlaying() {
 
 
       {/* Control deck */}
-      <section className="relative z-10 shrink-0 px-6 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-4">
+      <section className="relative z-10 shrink-0 px-6 pb-[calc(2.25rem+env(safe-area-inset-bottom))] pt-3">
         <Slider
           value={[localProgress * 100]}
           max={100}
