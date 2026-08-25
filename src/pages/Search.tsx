@@ -458,6 +458,24 @@ export default function Search() {
                       </motion.div>
                     );
                   }
+                  if (entry.type === 'album') {
+                    const al = entry.item as Album;
+                    return (
+                      <motion.div key={`al-${al.id}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
+                        className="flex cursor-pointer items-center gap-3 py-2"
+                        onClick={() => {
+                          addRecentSearchItem({ id: String(al.id), kind: "album", title: al.title, subtitle: `Album • ${al.artist}`, artwork: al.artwork, query: al.title });
+                          navigate(`/album/${al.id.toString().replace("deezer-", "")}`);
+                        }}>
+                        <img src={al.artwork} alt="" loading="lazy" className="h-[52px] w-[52px] shrink-0 rounded-[3px] bg-muted/30 object-cover" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[16px] font-normal leading-tight text-foreground">{al.title}</p>
+                          <p className="mt-1 truncate text-[13px] text-muted-foreground">Album • {al.artist}</p>
+                        </div>
+                      </motion.div>
+                    );
+                  }
+
                   if (entry.type === 'playlist') {
                     const p = entry.item as any;
                     return (
