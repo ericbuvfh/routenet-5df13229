@@ -281,15 +281,13 @@ export default function NowPlaying() {
         <button
           type="button"
           onClick={() => navigate("/lyrics")}
-          className="mt-4 flex w-full items-center justify-between rounded-xl bg-foreground/[0.07] px-4 py-3 text-left transition-colors hover:bg-foreground/[0.12] active:scale-[0.99]"
+          className="mt-4 flex w-full items-center justify-center rounded-xl bg-foreground/[0.07] px-4 py-3 transition-colors hover:bg-foreground/[0.12] active:scale-[0.99]"
         >
-          <span className="flex items-center gap-2 text-[14px] font-semibold text-foreground">
+          <span className="flex items-center justify-center gap-2 text-center text-[14px] font-semibold text-foreground">
             <Mic2 className="h-4 w-4" /> Show Lyrics
           </span>
-          <span className="max-w-[45%] truncate text-[12px] text-muted-foreground">
-            {nextTrack ? `Next: ${toTitleCase(nextTrack.title)}` : ""}
-          </span>
         </button>
+
 
       </section>
 
