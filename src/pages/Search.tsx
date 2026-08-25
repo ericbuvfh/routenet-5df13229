@@ -283,14 +283,43 @@ export default function Search() {
   const showPlaylists = activeFilter === 'all' || activeFilter === 'playlists';
   const showMixes = activeFilter === 'mixes';
 
-  // Find the top result across all types
+  // Find the top result across all types (songs, artists, albums, playlists),
+  // with duplicates removed: one row per artist, one row per title+artist song.
+  const normKey = (s: string) => (s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+  const seenTrackKeys = new Set<string>();
+  const dedupedTracks = filteredTracks.filter((t) => {
+    const k = `${normKey(t.title)}::${normKey(t.artist)}`;
+    if (!k.trim() || seenTrackKeys.has(k)) return false;
+    seenTrackKeys.add(k);
+    return true;
+  });
+
+  const seenArtistKeys = new Set<string>();
+  const dedupedArtists = filteredArtists.filter((a) => {
+    const k = normKey(a.name);
+    if (!k || seenArtistKeys.has(k)) return false;
+    seenArtistKeys.add(k);
+    return true;
+  });
+
+  const seenAlbumKeys = new Set<string>();
+  const dedupedAlbums = filteredAlbums.filter((a) => {
+    const k = `${normKey(a.title)}::${normKey(a.artist)}`;
+    if (!k.trim() || seenAlbumKeys.has(k)) return false;
+    seenAlbumKeys.add(k);
+    return true;
+  });
+
   const topItems = [
-    ...filteredTracks.map(t => ({ type: 'track' as const, score: scoreMatch(debouncedQuery, t), item: t })),
-    ...filteredArtists.map(a => ({ type: 'artist' as const, score: scoreMatch(debouncedQuery, { name: a.name }), item: a })),
+    ...dedupedTracks.map(t => ({ type: 'track' as const, score: scoreMatch(debouncedQuery, t), item: t })),
+    ...dedupedArtists.map(a => ({ type: 'artist' as const, score: scoreMatch(debouncedQuery, { name: a.name }), item: a })),
+    ...dedupedAlbums.map(a => ({ type: 'album' as const, score: scoreMatch(debouncedQuery, { title: a.title, artist: a.artist }), item: a })),
     ...matchingPlaylists.map(p => ({ type: 'playlist' as const, score: scoreMatch(debouncedQuery, { title: p.name }), item: p })),
   ].sort((a, b) => b.score - a.score);
 
   const topResult = topItems[0];
+
 
 
   return (
