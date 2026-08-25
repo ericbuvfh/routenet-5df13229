@@ -502,9 +502,9 @@ export default function Search() {
           )}
 
           {/* Filtered views */}
-          {showArtists && activeFilter === 'artists' && filteredArtists.length > 0 && (
+          {showArtists && activeFilter === 'artists' && dedupedArtists.length > 0 && (
             <section><h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Artists</h2>
-              <div>{filteredArtists.map((a, i) => (
+              <div>{dedupedArtists.map((a, i) => (
                 <motion.div key={a.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
                   className="flex cursor-pointer items-center gap-3 py-2" onClick={() => navigate(`/artist/${encodeURIComponent(a.name)}`)}>
                   <img src={a.avatar} alt="" className="h-[52px] w-[52px] shrink-0 rounded-full bg-muted/30 object-cover" />
@@ -516,9 +516,9 @@ export default function Search() {
               ))}</div>
             </section>
           )}
-          {showTracks && activeFilter === 'tracks' && filteredTracks.length > 0 && (
+          {showTracks && activeFilter === 'tracks' && dedupedTracks.length > 0 && (
             <section><h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Songs</h2>
-              <div>{filteredTracks.map((t, i) => (
+              <div>{dedupedTracks.map((t, i) => (
                 <motion.div key={t.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.02, 0.3) }}
                   className="group flex cursor-pointer items-center gap-3 py-2"
                   onClick={() => playTrack(t, filteredTracks)}>
@@ -543,9 +543,9 @@ export default function Search() {
               ))}</div>
             </section>
           )}
-          {showAlbums && activeFilter === 'albums' && filteredAlbums.length > 0 && (
+          {showAlbums && activeFilter === 'albums' && dedupedAlbums.length > 0 && (
             <section><h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Albums</h2>
-              <div>{filteredAlbums.map((a, i) => (
+              <div>{dedupedAlbums.map((a, i) => (
                 <motion.div key={a.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
                   className="flex cursor-pointer items-center gap-3 py-2" onClick={() => navigate(`/album/${a.id.toString().replace("deezer-", "")}`)}>
                   <img src={a.artwork} alt="" className="h-[52px] w-[52px] shrink-0 rounded-[3px] bg-muted/30 object-cover" />
