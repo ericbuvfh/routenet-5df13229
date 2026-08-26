@@ -339,7 +339,8 @@ interface Scored extends Suggestion { key: string; bucket: Bucket }
 
 /**
  * Filter candidates. `strict` also enforces the 7-day recommended-song block
- * so the engine keeps finding new material instead of repeating itself.
+ * and the recent-queue memory so the engine keeps finding new material.
+ * The 6-hour play cooldown is enforced in BOTH modes — it is never relaxed.
  */
 function prepare(list: Suggestion[], excludeKeys: Set<string>, strict = true): Scored[] {
   const seen = new Set<string>();
@@ -348,8 +349,9 @@ function prepare(list: Suggestion[], excludeKeys: Set<string>, strict = true): S
   for (const s of list) {
     const key = songKey(s.title, s.artist);
     if (!key || seen.has(key) || excludeKeys.has(key)) continue;
+    if (onCooldown(key)) continue;
     if (strict && isRecentlyRecommended(key)) continue;
-    if (strict && (onCooldown(key) || recent.has(key))) continue;
+    if (strict && recent.has(key)) continue;
     seen.add(key);
     out.push({ ...s, key, bucket: bucketOf(s.role) });
   }
