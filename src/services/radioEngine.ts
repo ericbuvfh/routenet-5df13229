@@ -451,11 +451,18 @@ async function decorate(tracks: Track[]): Promise<Track[]> {
 /**
  * Local fallback — no external API at all. When the AI engine is unavailable
  * (offline, provider down, rate limited) the queue is built from the
- * listener's own data: liked songs, listening history, searched songs and the
- * artists followed during onboarding.
+ * listener's own data: liked songs, listening history and the artists
+ * followed during onboarding. Search history is never used.
+ *
+ * `strict` keeps the 7-day recommended block on; the 6-hour cooldown always
+ * applies.
  */
-async function localCandidates(seed: Track | null, limit: number): Promise<Suggestion[]> {
-  const tracks = await getFallbackRecommendations(Math.max(limit, 30), seed).catch(() => [] as Track[]);
+async function localCandidates(seed: Track | null, limit: number, strict = true): Promise<Suggestion[]> {
+  const tracks = await getFallbackRecommendations(
+    Math.max(limit, 30),
+    seed,
+    (title, artist) => isSongBlocked(title, artist, strict),
+  ).catch(() => [] as Track[]);
   return tracks.map((t) => ({
     title: t.title,
     artist: t.artist,
@@ -464,17 +471,27 @@ async function localCandidates(seed: Track | null, limit: number): Promise<Sugge
   }));
 }
 
-/** Up to 15% of every queue comes from the listener's own library. */
+/**
+ * A small slice of every queue (~8%) can come from the listener's own
+ * library — liked songs, recent plays and their playlists — so the session
+ * still feels personal without echoing the library back at them.
+ * Cooldowns apply here too, and no more than 1 song per artist.
+ */
 function libraryPicks(ctx: LibraryContext, limit: number, excludeKeys: Set<string>): Scored[] {
-  const target = Math.max(1, Math.round(limit * 0.15));
-  const pool = [...ctx.liked, ...ctx.recent];
+  const target = Math.max(1, Math.round(limit * 0.08));
+  const pool = [...ctx.liked, ...ctx.recent, ...ctx.playlistTracks];
   const seen = new Set<string>();
+  const artists = new Set<string>();
   const out: Scored[] = [];
   for (const t of pool.sort(() => Math.random() - 0.5)) {
     if (!t?.title || !t?.artist) continue;
     const key = songKey(t.title, t.artist);
     if (!key || seen.has(key) || excludeKeys.has(key)) continue;
+    if (onCooldown(key)) continue;
+    const a = artistKey(t.artist);
+    if (artists.has(a)) continue;
     seen.add(key);
+    artists.add(a);
     out.push({ title: t.title, artist: t.artist, role: "fanfav", track: t, key, bucket: "fanfav" });
     if (out.length >= target) break;
   }
