@@ -124,6 +124,18 @@ function onCooldown(key: string): boolean {
   return !!at && Date.now() - at < COOLDOWN_MS;
 }
 
+/**
+ * True when a song may not be recommended right now.
+ * `strict` also enforces the 7-day recommended-song block; the 6-hour
+ * play cooldown is NEVER relaxed.
+ */
+export function isSongBlocked(title: string, artist: string, strict = true): boolean {
+  const key = songKey(title, artist);
+  if (!key) return true;
+  if (onCooldown(key)) return true;
+  return strict && isRecentlyRecommended(key);
+}
+
 /** How many distinct artists have played since this one — Infinity if never. */
 export function artistDistance(artist: string): number {
   const k = artistKey(artist);
