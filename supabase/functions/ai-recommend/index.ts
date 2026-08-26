@@ -12,9 +12,12 @@ interface Body {
   followedArtists?: string[];
   likedSongs?: string[];
   recentlyPlayed?: string[];
+  playlistSongs?: string[];
   savedAlbums?: string[];
+  recentArtists?: string[];
   excludeTitles?: string[];
   distribution?: Record<string, number>;
+  variety?: string;
   count?: number;
 }
 
@@ -30,8 +33,11 @@ Deno.serve(async (req) => {
     const followed = (body.followedArtists ?? []).slice(0, 30);
     const liked = (body.likedSongs ?? []).slice(0, 30);
     const recent = (body.recentlyPlayed ?? []).slice(0, 20);
+    const playlistSongs = (body.playlistSongs ?? []).slice(0, 25);
     const albums = (body.savedAlbums ?? []).slice(0, 20);
+    const recentArtists = (body.recentArtists ?? []).slice(0, 20);
     const exclude = (body.excludeTitles ?? []).slice(0, 120);
+    const variety = String(body.variety ?? Math.random().toString(36).slice(2, 8));
 
     const signalSummary = signals
       .map((s) => `- ${s.type}: ${s.artist ?? ""}${s.title ? ` — ${s.title}` : ""}${s.genre ? ` [${s.genre}]` : ""}${s.weight ? ` (w=${s.weight})` : ""}`)
@@ -53,15 +59,27 @@ Role distribution (approximate, across the whole list):
   hidden 10% (lesser-known gems that fit the taste)
   trending: use sparingly — at most 3 songs total
 
-Hard rules:
+HOW TO USE THE LISTENER'S LIBRARY (critical):
+- The LIKED SONGS, SAVED ALBUMS, PLAYLIST SONGS and RECENTLY PLAYED lists are a TASTE PROFILE ONLY. They tell you the listener's genres, eras, languages, moods, energy and production styles.
+- They are NOT a source of songs. NEVER return a song that appears in any of those lists, and do not simply return more songs by those exact artists.
+- Read them, infer the taste, then recommend DIFFERENT songs that fit that taste.
+
+DIVERSITY RULES (critical):
+- Draw from a LONG catalogue: many different artists, albums, years and scenes. Never build the list around one artist or one album.
+- Maximum 2 songs per artist, maximum 2 songs from the same album, and at least 20 DIFFERENT artists overall.
+- At least half the list must be artists that do NOT appear in FOLLOWED ARTISTS, LIKED SONGS or RECENTLY HEARD ARTISTS — introduce adjacent and lesser-known artists in the same taste space.
+- Avoid the RECENTLY HEARD ARTISTS list where you can; the listener just heard them.
+- Vary your picks between runs: do not fall back to the same "safe" songs every time. Variety token for this run: ${variety}.
+
+Other hard rules:
 - Do NOT build a chart / top-hits playlist. Prefer album cuts, fan favourites, classics and new releases over the obvious mainstream singles.
-- Deeply respect the listener's LIKED SONGS, SAVED ALBUMS, RECENTLY PLAYED and FOLLOWED ARTISTS below: match their genres, era, language, energy and production style.
-- Never repeat the seed or any excluded title, and never return a song already listed under LIKED or RECENTLY PLAYED.
-- Maximum 2 songs per artist, and at least 15 DIFFERENT artists overall.
+- Never repeat the seed or any excluded title.
 - Only real songs that exist on streaming services. No mixes, edits, karaoke, covers, sped-up or AI versions.
 - Return ONLY valid JSON, no prose.`;
 
     const user = `SEED: ${seed ? `${seed.title} — ${seed.artist}${seed.genre ? ` (${seed.genre})` : ""}` : "(none — use signals)"}
+
+--- TASTE PROFILE (understand it; never echo these songs back) ---
 
 FOLLOWED ARTISTS:
 ${followed.map((a) => `- ${a}`).join("\n") || "(none)"}
@@ -72,11 +90,19 @@ ${liked.map((a) => `- ${a}`).join("\n") || "(none)"}
 SAVED ALBUMS:
 ${albums.map((a) => `- ${a}`).join("\n") || "(none)"}
 
+SONGS IN THEIR PLAYLISTS:
+${playlistSongs.map((a) => `- ${a}`).join("\n") || "(none)"}
+
 RECENTLY PLAYED:
 ${recent.map((a) => `- ${a}`).join("\n") || "(none)"}
 
+RECENTLY HEARD ARTISTS (avoid where possible):
+${recentArtists.map((a) => `- ${a}`).join("\n") || "(none)"}
+
 RECENT SIGNALS:
 ${signalSummary || "(none)"}
+
+--- END TASTE PROFILE ---
 
 EXCLUDE (already recommended or played — never return these):
 ${exclude.map((t) => `- ${t}`).join("\n") || "(none)"}

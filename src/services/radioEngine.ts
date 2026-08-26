@@ -21,6 +21,7 @@ import { enrichTracks } from "@/services/metadataEnrichment";
 import { toTitleCase } from "@/utils/toTitleCase";
 import { getFallbackRecommendations, getLikedSongs, getRecentlyPlayed } from "@/services/fallbackRecommendation";
 import { isRecentlyRecommended, rememberRecommended } from "@/services/recommendedSongs";
+import { getUserPlaylists, getPlaylistTracks } from "@/services/playlistService";
 
 
 
@@ -122,6 +123,18 @@ function saveCooldown() {
 function onCooldown(key: string): boolean {
   const at = cooldown.get(key);
   return !!at && Date.now() - at < COOLDOWN_MS;
+}
+
+/**
+ * True when a song may not be recommended right now.
+ * `strict` also enforces the 7-day recommended-song block; the 6-hour
+ * play cooldown is NEVER relaxed.
+ */
+export function isSongBlocked(title: string, artist: string, strict = true): boolean {
+  const key = songKey(title, artist);
+  if (!key) return true;
+  if (onCooldown(key)) return true;
+  return strict && isRecentlyRecommended(key);
 }
 
 /** How many distinct artists have played since this one — Infinity if never. */
@@ -268,11 +281,33 @@ interface LibraryContext {
   liked: Track[];
   recent: Track[];
   albums: string[];
+  playlistTracks: Track[];
+}
+
+/** Songs sitting in the listener's own playlists (taste signal + tiny source). */
+async function playlistTracks(): Promise<Track[]> {
+  try {
+    const playlists = (await getUserPlaylists()).slice(0, 4);
+    const lists = await Promise.all(playlists.map((p) => getPlaylistTracks(p.id).catch(() => [])));
+    return lists.flat().slice(0, 60).map((r, i) => ({
+      id: `pl-${r.id ?? i}`,
+      title: r.track_title,
+      artist: r.track_artist,
+      album: r.track_album || "",
+      artwork: r.track_artwork || "/placeholder.svg",
+      duration: r.track_duration || 0,
+    })) as Track[];
+  } catch {
+    return [];
+  }
 }
 
 async function libraryContext(): Promise<LibraryContext> {
-  const liked = await getLikedSongs().catch(() => [] as Track[]);
-  return { liked: liked.slice(0, 60), recent: getRecentlyPlayed(25), albums: savedAlbums() };
+  const [liked, pl] = await Promise.all([
+    getLikedSongs().catch(() => [] as Track[]),
+    playlistTracks(),
+  ]);
+  return { liked: liked.slice(0, 60), recent: getRecentlyPlayed(25), albums: savedAlbums(), playlistTracks: pl };
 }
 
 const label = (t: Track) => `${t.title} — ${t.artist}`;
@@ -290,9 +325,14 @@ async function askAI(
       followedArtists: followedArtists(),
       likedSongs: ctx.liked.slice(0, 30).map(label),
       recentlyPlayed: ctx.recent.slice(0, 20).map(label),
+      playlistSongs: ctx.playlistTracks.slice(0, 25).map(label),
       savedAlbums: ctx.albums,
+      // Artists heard very recently — the model should look beyond them.
+      recentArtists: artistHistory.slice(0, 15),
       excludeTitles: exclude.slice(0, 120),
       distribution: MIX,
+      // Rotates the model's starting point so runs don't converge.
+      variety: Math.random().toString(36).slice(2, 8),
       count,
     },
   });
@@ -327,7 +367,8 @@ interface Scored extends Suggestion { key: string; bucket: Bucket }
 
 /**
  * Filter candidates. `strict` also enforces the 7-day recommended-song block
- * so the engine keeps finding new material instead of repeating itself.
+ * and the recent-queue memory so the engine keeps finding new material.
+ * The 6-hour play cooldown is enforced in BOTH modes — it is never relaxed.
  */
 function prepare(list: Suggestion[], excludeKeys: Set<string>, strict = true): Scored[] {
   const seen = new Set<string>();
@@ -336,8 +377,9 @@ function prepare(list: Suggestion[], excludeKeys: Set<string>, strict = true): S
   for (const s of list) {
     const key = songKey(s.title, s.artist);
     if (!key || seen.has(key) || excludeKeys.has(key)) continue;
+    if (onCooldown(key)) continue;
     if (strict && isRecentlyRecommended(key)) continue;
-    if (strict && (onCooldown(key) || recent.has(key))) continue;
+    if (strict && recent.has(key)) continue;
     seen.add(key);
     out.push({ ...s, key, bucket: bucketOf(s.role) });
   }
@@ -437,11 +479,18 @@ async function decorate(tracks: Track[]): Promise<Track[]> {
 /**
  * Local fallback — no external API at all. When the AI engine is unavailable
  * (offline, provider down, rate limited) the queue is built from the
- * listener's own data: liked songs, listening history, searched songs and the
- * artists followed during onboarding.
+ * listener's own data: liked songs, listening history and the artists
+ * followed during onboarding. Search history is never used.
+ *
+ * `strict` keeps the 7-day recommended block on; the 6-hour cooldown always
+ * applies.
  */
-async function localCandidates(seed: Track | null, limit: number): Promise<Suggestion[]> {
-  const tracks = await getFallbackRecommendations(Math.max(limit, 30), seed).catch(() => [] as Track[]);
+async function localCandidates(seed: Track | null, limit: number, strict = true): Promise<Suggestion[]> {
+  const tracks = await getFallbackRecommendations(
+    Math.max(limit, 30),
+    seed,
+    (title, artist) => isSongBlocked(title, artist, strict),
+  ).catch(() => [] as Track[]);
   return tracks.map((t) => ({
     title: t.title,
     artist: t.artist,
@@ -450,17 +499,27 @@ async function localCandidates(seed: Track | null, limit: number): Promise<Sugge
   }));
 }
 
-/** Up to 15% of every queue comes from the listener's own library. */
+/**
+ * A small slice of every queue (~8%) can come from the listener's own
+ * library — liked songs, recent plays and their playlists — so the session
+ * still feels personal without echoing the library back at them.
+ * Cooldowns apply here too, and no more than 1 song per artist.
+ */
 function libraryPicks(ctx: LibraryContext, limit: number, excludeKeys: Set<string>): Scored[] {
-  const target = Math.max(1, Math.round(limit * 0.15));
-  const pool = [...ctx.liked, ...ctx.recent];
+  const target = Math.max(1, Math.round(limit * 0.08));
+  const pool = [...ctx.liked, ...ctx.recent, ...ctx.playlistTracks];
   const seen = new Set<string>();
+  const artists = new Set<string>();
   const out: Scored[] = [];
   for (const t of pool.sort(() => Math.random() - 0.5)) {
     if (!t?.title || !t?.artist) continue;
     const key = songKey(t.title, t.artist);
     if (!key || seen.has(key) || excludeKeys.has(key)) continue;
+    if (onCooldown(key)) continue;
+    const a = artistKey(t.artist);
+    if (artists.has(a)) continue;
     seen.add(key);
+    artists.add(a);
     out.push({ title: t.title, artist: t.artist, role: "fanfav", track: t, key, bucket: "fanfav" });
     if (out.length >= target) break;
   }
@@ -497,9 +556,10 @@ async function buildBatch(seed: Track | null, existing: Track[], limit: number):
     pool = [...pool, ...prepare(local, excludeKeys).filter((p) => !seen.has(p.key))];
   }
 
-  // Last resort: relax cooldowns and the 7-day recommended block.
+  // Last resort: relax ONLY the 7-day recommended block and the queue memory.
+  // The 6-hour play cooldown always stays enforced.
   if (pool.length < Math.min(limit, 8)) {
-    const local = await localCandidates(seed, limit);
+    const local = await localCandidates(seed, limit, false);
     const relaxed = prepare([...ai, ...local], new Set<string>(), false);
     const seen = new Set(pool.map((p) => p.key));
     pool = [...pool, ...relaxed.filter((p) => !seen.has(p.key))];
@@ -507,7 +567,7 @@ async function buildBatch(seed: Track | null, existing: Track[], limit: number):
 
   if (!pool.length) return [];
 
-  // 15% of the queue is the listener's own liked songs / recent plays.
+  // A small slice (~8%) of the queue comes from the listener's own library.
   const own = libraryPicks(ctx, limit, new Set([...excludeKeys, ...pool.map((p) => p.key)]));
   const arranged = weave(arrange(pool, Math.max(1, limit - own.length)), own).slice(0, limit);
 

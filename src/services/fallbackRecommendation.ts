@@ -80,26 +80,8 @@ export function getRecentlyPlayed(limit = 20): Track[] {
   return getListeningHistory().slice(0, limit);
 }
 
-/** Songs the user surfaced through their own searches (cached locally). */
-export function getSearchedSongs(limit = 40): Track[] {
-  const out: Track[] = [];
-  for (const item of getRecentSearchItems()) {
-    if (item.kind === "track") {
-      out.push({
-        id: item.id,
-        title: item.title,
-        artist: item.subtitle,
-        album: "",
-        artwork: item.artwork || "/placeholder.svg",
-        duration: 0,
-      } as Track);
-    }
-    const cached = item.query ? readSearchCache(item.query) : null;
-    if (cached?.tracks?.length) out.push(...cached.tracks.slice(0, 10));
-    if (out.length >= limit * 2) break;
-  }
-  return out.filter((t) => t?.title && t?.artist).slice(0, limit);
-}
+/* Search history is deliberately NOT a recommendation source. */
+
 
 /** Artists chosen in onboarding are treated as the user's followed artists. */
 export function getFollowedArtists(): string[] {
@@ -139,21 +121,27 @@ function dedupe(tracks: Track[]): Track[] {
 /**
  * Build a shuffled, diverse playlist from the user's own library only.
  * Fast, offline-safe, and never calls a music API.
+ *
+ * `isBlocked` lets the caller (radioEngine) drop songs that are still inside
+ * their 6-hour cooldown or 7-day recommended window.
  */
-export async function getFallbackRecommendations(limit = 30, seed?: Track | null): Promise<Track[]> {
+export async function getFallbackRecommendations(
+  limit = 30,
+  seed?: Track | null,
+  isBlocked?: (title: string, artist: string) => boolean,
+): Promise<Track[]> {
   try {
     const liked = await getLikedSongs();
     const recent = getRecentlyPlayed(20);
-    const searched = getSearchedSongs(40);
     const followed = new Set(getFollowedArtists().map(norm));
 
-    // Weighted selection: all likes, ~a random slice of the other sources.
+    // Weighted selection: all likes, ~a random slice of recent plays.
     const recentSlice = shuffleArray(recent).slice(0, Math.max(4, Math.ceil(recent.length * 0.6)));
-    const searchSlice = shuffleArray(searched).slice(0, Math.max(4, Math.ceil(searched.length * 0.4)));
 
-    const merged = dedupe([...liked, ...recentSlice, ...searchSlice]);
+    const merged = dedupe([...liked, ...recentSlice]);
     const seedKey = seed ? trackKey(seed) : "";
-    const pool = merged.filter((t) => trackKey(t) !== seedKey);
+    let pool = merged.filter((t) => trackKey(t) !== seedKey);
+    if (isBlocked) pool = pool.filter((t) => !isBlocked(t.title, t.artist));
 
     // Followed (onboarding) artists get pulled toward the front, then the
     // whole list is shuffled inside each tier for variety.
