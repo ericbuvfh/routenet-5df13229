@@ -12,9 +12,12 @@ interface Body {
   followedArtists?: string[];
   likedSongs?: string[];
   recentlyPlayed?: string[];
+  playlistSongs?: string[];
   savedAlbums?: string[];
+  recentArtists?: string[];
   excludeTitles?: string[];
   distribution?: Record<string, number>;
+  variety?: string;
   count?: number;
 }
 
