@@ -80,26 +80,8 @@ export function getRecentlyPlayed(limit = 20): Track[] {
   return getListeningHistory().slice(0, limit);
 }
 
-/** Songs the user surfaced through their own searches (cached locally). */
-export function getSearchedSongs(limit = 40): Track[] {
-  const out: Track[] = [];
-  for (const item of getRecentSearchItems()) {
-    if (item.kind === "track") {
-      out.push({
-        id: item.id,
-        title: item.title,
-        artist: item.subtitle,
-        album: "",
-        artwork: item.artwork || "/placeholder.svg",
-        duration: 0,
-      } as Track);
-    }
-    const cached = item.query ? readSearchCache(item.query) : null;
-    if (cached?.tracks?.length) out.push(...cached.tracks.slice(0, 10));
-    if (out.length >= limit * 2) break;
-  }
-  return out.filter((t) => t?.title && t?.artist).slice(0, limit);
-}
+/* Search history is deliberately NOT a recommendation source. */
+
 
 /** Artists chosen in onboarding are treated as the user's followed artists. */
 export function getFollowedArtists(): string[] {
