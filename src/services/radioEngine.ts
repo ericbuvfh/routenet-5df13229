@@ -280,11 +280,33 @@ interface LibraryContext {
   liked: Track[];
   recent: Track[];
   albums: string[];
+  playlistTracks: Track[];
+}
+
+/** Songs sitting in the listener's own playlists (taste signal + tiny source). */
+async function playlistTracks(): Promise<Track[]> {
+  try {
+    const playlists = (await getUserPlaylists()).slice(0, 4);
+    const lists = await Promise.all(playlists.map((p) => getPlaylistTracks(p.id).catch(() => [])));
+    return lists.flat().slice(0, 60).map((r, i) => ({
+      id: `pl-${r.id ?? i}`,
+      title: r.track_title,
+      artist: r.track_artist,
+      album: r.track_album || "",
+      artwork: r.track_artwork || "/placeholder.svg",
+      duration: r.track_duration || 0,
+    })) as Track[];
+  } catch {
+    return [];
+  }
 }
 
 async function libraryContext(): Promise<LibraryContext> {
-  const liked = await getLikedSongs().catch(() => [] as Track[]);
-  return { liked: liked.slice(0, 60), recent: getRecentlyPlayed(25), albums: savedAlbums() };
+  const [liked, pl] = await Promise.all([
+    getLikedSongs().catch(() => [] as Track[]),
+    playlistTracks(),
+  ]);
+  return { liked: liked.slice(0, 60), recent: getRecentlyPlayed(25), albums: savedAlbums(), playlistTracks: pl };
 }
 
 const label = (t: Track) => `${t.title} — ${t.artist}`;
@@ -302,9 +324,14 @@ async function askAI(
       followedArtists: followedArtists(),
       likedSongs: ctx.liked.slice(0, 30).map(label),
       recentlyPlayed: ctx.recent.slice(0, 20).map(label),
+      playlistSongs: ctx.playlistTracks.slice(0, 25).map(label),
       savedAlbums: ctx.albums,
+      // Artists heard very recently — the model should look beyond them.
+      recentArtists: artistHistory.slice(0, 15),
       excludeTitles: exclude.slice(0, 120),
       distribution: MIX,
+      // Rotates the model's starting point so runs don't converge.
+      variety: Math.random().toString(36).slice(2, 8),
       count,
     },
   });
