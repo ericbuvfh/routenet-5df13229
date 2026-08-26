@@ -528,9 +528,10 @@ async function buildBatch(seed: Track | null, existing: Track[], limit: number):
     pool = [...pool, ...prepare(local, excludeKeys).filter((p) => !seen.has(p.key))];
   }
 
-  // Last resort: relax cooldowns and the 7-day recommended block.
+  // Last resort: relax ONLY the 7-day recommended block and the queue memory.
+  // The 6-hour play cooldown always stays enforced.
   if (pool.length < Math.min(limit, 8)) {
-    const local = await localCandidates(seed, limit);
+    const local = await localCandidates(seed, limit, false);
     const relaxed = prepare([...ai, ...local], new Set<string>(), false);
     const seen = new Set(pool.map((p) => p.key));
     pool = [...pool, ...relaxed.filter((p) => !seen.has(p.key))];
@@ -538,7 +539,7 @@ async function buildBatch(seed: Track | null, existing: Track[], limit: number):
 
   if (!pool.length) return [];
 
-  // 15% of the queue is the listener's own liked songs / recent plays.
+  // A small slice (~8%) of the queue comes from the listener's own library.
   const own = libraryPicks(ctx, limit, new Set([...excludeKeys, ...pool.map((p) => p.key)]));
   const arranged = weave(arrange(pool, Math.max(1, limit - own.length)), own).slice(0, limit);
 
