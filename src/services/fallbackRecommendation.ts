@@ -121,21 +121,27 @@ function dedupe(tracks: Track[]): Track[] {
 /**
  * Build a shuffled, diverse playlist from the user's own library only.
  * Fast, offline-safe, and never calls a music API.
+ *
+ * `isBlocked` lets the caller (radioEngine) drop songs that are still inside
+ * their 6-hour cooldown or 7-day recommended window.
  */
-export async function getFallbackRecommendations(limit = 30, seed?: Track | null): Promise<Track[]> {
+export async function getFallbackRecommendations(
+  limit = 30,
+  seed?: Track | null,
+  isBlocked?: (title: string, artist: string) => boolean,
+): Promise<Track[]> {
   try {
     const liked = await getLikedSongs();
     const recent = getRecentlyPlayed(20);
-    const searched = getSearchedSongs(40);
     const followed = new Set(getFollowedArtists().map(norm));
 
-    // Weighted selection: all likes, ~a random slice of the other sources.
+    // Weighted selection: all likes, ~a random slice of recent plays.
     const recentSlice = shuffleArray(recent).slice(0, Math.max(4, Math.ceil(recent.length * 0.6)));
-    const searchSlice = shuffleArray(searched).slice(0, Math.max(4, Math.ceil(searched.length * 0.4)));
 
-    const merged = dedupe([...liked, ...recentSlice, ...searchSlice]);
+    const merged = dedupe([...liked, ...recentSlice]);
     const seedKey = seed ? trackKey(seed) : "";
-    const pool = merged.filter((t) => trackKey(t) !== seedKey);
+    let pool = merged.filter((t) => trackKey(t) !== seedKey);
+    if (isBlocked) pool = pool.filter((t) => !isBlocked(t.title, t.artist));
 
     // Followed (onboarding) artists get pulled toward the front, then the
     // whole list is shuffled inside each tier for variety.
