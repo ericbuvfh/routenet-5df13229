@@ -477,15 +477,6 @@ async function decorate(tracks: Track[]): Promise<Track[]> {
 }
 
 /**
- * Local fallback — no external API at all. When the AI engine is unavailable
- * (offline, provider down, rate limited) the queue is built from the
- * listener's own data: liked songs, listening history and the artists
- * followed during onboarding. Search history is never used.
- *
- * `strict` keeps the 7-day recommended block on; the 6-hour cooldown always
- * applies.
- */
-/**
  * The queue is written entirely by the AI. The listener's library (liked
  * songs, playlists, saved albums, history) is sent as a TASTE PROFILE only —
  * songs from the library are never placed in the queue, and there is no
