@@ -19,7 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getTopSignalArtists, getRecentSignals } from "@/services/tasteEvents";
 import { enrichTracks } from "@/services/metadataEnrichment";
 import { toTitleCase } from "@/utils/toTitleCase";
-import { getFallbackRecommendations, getLikedSongs, getRecentlyPlayed } from "@/services/fallbackRecommendation";
+import { getLikedSongs, getRecentlyPlayed } from "@/services/fallbackRecommendation";
 import { isRecentlyRecommended, rememberRecommended } from "@/services/recommendedSongs";
 import { getUserPlaylists, getPlaylistTracks } from "@/services/playlistService";
 
@@ -477,67 +477,11 @@ async function decorate(tracks: Track[]): Promise<Track[]> {
 }
 
 /**
- * Local fallback — no external API at all. When the AI engine is unavailable
- * (offline, provider down, rate limited) the queue is built from the
- * listener's own data: liked songs, listening history and the artists
- * followed during onboarding. Search history is never used.
- *
- * `strict` keeps the 7-day recommended block on; the 6-hour cooldown always
- * applies.
+ * The queue is written entirely by the AI. The listener's library (liked
+ * songs, playlists, saved albums, history) is sent as a TASTE PROFILE only —
+ * songs from the library are never placed in the queue, and there is no
+ * local library fallback.
  */
-async function localCandidates(seed: Track | null, limit: number, strict = true): Promise<Suggestion[]> {
-  const tracks = await getFallbackRecommendations(
-    Math.max(limit, 30),
-    seed,
-    (title, artist) => isSongBlocked(title, artist, strict),
-  ).catch(() => [] as Track[]);
-  return tracks.map((t) => ({
-    title: t.title,
-    artist: t.artist,
-    role: "related",
-    track: t,
-  }));
-}
-
-/**
- * A small slice of every queue (~8%) can come from the listener's own
- * library — liked songs, recent plays and their playlists — so the session
- * still feels personal without echoing the library back at them.
- * Cooldowns apply here too, and no more than 1 song per artist.
- */
-function libraryPicks(ctx: LibraryContext, limit: number, excludeKeys: Set<string>): Scored[] {
-  const target = Math.max(1, Math.round(limit * 0.08));
-  const pool = [...ctx.liked, ...ctx.recent, ...ctx.playlistTracks];
-  const seen = new Set<string>();
-  const artists = new Set<string>();
-  const out: Scored[] = [];
-  for (const t of pool.sort(() => Math.random() - 0.5)) {
-    if (!t?.title || !t?.artist) continue;
-    const key = songKey(t.title, t.artist);
-    if (!key || seen.has(key) || excludeKeys.has(key)) continue;
-    if (onCooldown(key)) continue;
-    const a = artistKey(t.artist);
-    if (artists.has(a)) continue;
-    seen.add(key);
-    artists.add(a);
-    out.push({ title: t.title, artist: t.artist, role: "fanfav", track: t, key, bucket: "fanfav" });
-    if (out.length >= target) break;
-  }
-  return out;
-}
-
-/** Spread the library picks evenly through the AI queue. */
-function weave(main: Scored[], extras: Scored[]): Scored[] {
-  if (!extras.length) return main;
-  const out = [...main];
-  const step = Math.max(3, Math.floor(out.length / (extras.length + 1)));
-  extras.forEach((e, i) => {
-    const at = Math.min(out.length, (i + 1) * step + i);
-    out.splice(at, 0, e);
-  });
-  return out;
-}
-
 async function buildBatch(seed: Track | null, existing: Track[], limit: number): Promise<Track[]> {
   const excludeKeys = new Set<string>(existing.map((t) => songKey(t.title, t.artist)));
   if (seed) excludeKeys.add(songKey(seed.title, seed.artist));
@@ -549,31 +493,21 @@ async function buildBatch(seed: Track | null, existing: Track[], limit: number):
 
   let pool = prepare(ai, excludeKeys);
 
-  // AI unavailable or too thin — fill from the user's own library, shuffled.
-  if (pool.length < Math.min(limit, 12)) {
-    const local = await localCandidates(seed, limit);
-    const seen = new Set(pool.map((p) => p.key));
-    pool = [...pool, ...prepare(local, excludeKeys).filter((p) => !seen.has(p.key))];
-  }
-
-  // Last resort: relax ONLY the 7-day recommended block and the queue memory.
+  // Thin result: relax ONLY the 7-day recommended block and the queue memory.
   // The 6-hour play cooldown always stays enforced.
   if (pool.length < Math.min(limit, 8)) {
-    const local = await localCandidates(seed, limit, false);
-    const relaxed = prepare([...ai, ...local], new Set<string>(), false);
+    const relaxed = prepare(ai, new Set<string>(), false);
     const seen = new Set(pool.map((p) => p.key));
     pool = [...pool, ...relaxed.filter((p) => !seen.has(p.key))];
   }
 
   if (!pool.length) return [];
 
-  // A small slice (~8%) of the queue comes from the listener's own library.
-  const own = libraryPicks(ctx, limit, new Set([...excludeKeys, ...pool.map((p) => p.key)]));
-  const arranged = weave(arrange(pool, Math.max(1, limit - own.length)), own).slice(0, limit);
+  const arranged = arrange(pool, limit).slice(0, limit);
 
   rememberQueue(arranged.map((c) => c.key));
   // Everything recommended here is unavailable for the next 7 days.
-  rememberRecommended(arranged.filter((c) => !c.track).map((c) => c.key));
+  rememberRecommended(arranged.map((c) => c.key));
   return decorate(arranged.map((c) => toTrack(c, seed)));
 }
 

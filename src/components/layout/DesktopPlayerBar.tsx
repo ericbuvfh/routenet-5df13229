@@ -7,6 +7,7 @@ import { AddToPlaylistDialog } from "@/components/AddToPlaylistDialog";
 import { seekGlobalAudio } from "@/components/player/GlobalAudioPlayer";
 import { usePlayer } from "@/context/PlayerContext";
 import { cn } from "@/lib/utils";
+import { isDesktopViewport, toggleDesktopLyrics, useDesktopLyricsOpen } from "@/hooks/useDesktopLyrics";
 
 function formatTime(seconds: number) {
   if (!Number.isFinite(seconds) || seconds <= 0) return "0:00";
@@ -21,6 +22,7 @@ export function DesktopPlayerBar() {
   } = usePlayer();
 
   const [liked, setLiked] = useState(false);
+  const lyricsOpen = useDesktopLyricsOpen();
   const [showPlaylistDialog, setShowPlaylistDialog] = useState(false);
   const [downloadStatus, setDownloadStatus] = useState<"idle" | "downloading" | "done" | "failed">("idle");
 
@@ -111,7 +113,16 @@ export function DesktopPlayerBar() {
         </div>
 
         <div className="flex items-center justify-end gap-1 text-muted-foreground">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/lyrics")} aria-label="Lyrics"><Mic2 className="h-4 w-4" /></Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn("h-8 w-8", lyricsOpen && "text-primary")}
+            onClick={() => (isDesktopViewport() ? toggleDesktopLyrics() : navigate("/lyrics"))}
+            aria-label="Lyrics"
+            aria-pressed={lyricsOpen}
+          >
+            <Mic2 className="h-4 w-4" />
+          </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowPlaylistDialog(true)} aria-label="Add to playlist"><Plus className="h-4 w-4" /></Button>
           <Button
             variant="ghost"
