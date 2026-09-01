@@ -7,10 +7,12 @@ import { DesktopSidebar } from "./DesktopSidebar";
 import { DesktopTopBar } from "./DesktopTopBar";
 import { DesktopNowPlayingPanel } from "./DesktopNowPlayingPanel";
 import { DesktopPlayerBar } from "./DesktopPlayerBar";
+import { DesktopLyricsPanel } from "@/components/nowplaying/DesktopLyricsPanel";
 
 import { usePlayer } from "@/context/PlayerContext";
 import { useDJBridge } from "@/hooks/useDJBridge";
 import { useMediaSession } from "@/hooks/useMediaSession";
+import { useDesktopLyricsOpen } from "@/hooks/useDesktopLyrics";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -19,6 +21,7 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const { currentTrack } = usePlayer();
   const location = useLocation();
+  const lyricsOpen = useDesktopLyricsOpen();
   
   useDJBridge();
   useMediaSession();
@@ -34,7 +37,14 @@ export function AppLayout({ children }: AppLayoutProps) {
         <div className="flex min-w-0 flex-1 flex-col">
           {!hideChrome && <DesktopTopBar />}
           <main className={`relative min-h-0 flex-1 lg:overflow-y-auto ${currentTrack && !hideMiniplayer ? "pb-28 lg:pb-0" : "pb-14 lg:pb-0"}`}>
-            {children}
+            {lyricsOpen ? (
+              <>
+                <div className="hidden h-full lg:block"><DesktopLyricsPanel /></div>
+                <div className="lg:hidden">{children}</div>
+              </>
+            ) : (
+              children
+            )}
           </main>
         </div>
         {!hideChrome && <DesktopNowPlayingPanel />}
