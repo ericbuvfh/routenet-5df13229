@@ -22,6 +22,7 @@ export function DesktopPlayerBar() {
   } = usePlayer();
 
   const [liked, setLiked] = useState(false);
+  const lyricsOpen = useDesktopLyricsOpen();
   const [showPlaylistDialog, setShowPlaylistDialog] = useState(false);
   const [downloadStatus, setDownloadStatus] = useState<"idle" | "downloading" | "done" | "failed">("idle");
 
