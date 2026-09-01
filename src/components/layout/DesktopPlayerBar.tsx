@@ -7,6 +7,7 @@ import { AddToPlaylistDialog } from "@/components/AddToPlaylistDialog";
 import { seekGlobalAudio } from "@/components/player/GlobalAudioPlayer";
 import { usePlayer } from "@/context/PlayerContext";
 import { cn } from "@/lib/utils";
+import { isDesktopViewport, toggleDesktopLyrics, useDesktopLyricsOpen } from "@/hooks/useDesktopLyrics";
 
 function formatTime(seconds: number) {
   if (!Number.isFinite(seconds) || seconds <= 0) return "0:00";
