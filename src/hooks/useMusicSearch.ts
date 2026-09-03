@@ -40,7 +40,7 @@ export function useSearchMusic(query: string) {
 export function useUnifiedTrackSearch(query: string) {
   return useQuery<SearchTrack[]>({
     queryKey: ['unified-search', query],
-    queryFn: () => searchTracksUnified(query, 24),
+    queryFn: () => searchTracksUnified(query, 48),
     enabled: query.length >= 2,
     staleTime: 30 * 60 * 1000,
     gcTime: 60 * 60 * 1000,

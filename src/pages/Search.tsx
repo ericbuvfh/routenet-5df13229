@@ -419,6 +419,13 @@ export default function Search() {
 
           {/* Unified top results list — sorted by relevance, unlimited scroll */}
 
+          {(loadingUnified || isLoading) && topItems.length === 0 && activeFilter !== 'mixes' && (
+            <section>
+              <h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Top results</h2>
+              <ResultSkeletons count={10} />
+            </section>
+          )}
+
           {activeFilter === 'all' && topItems.length > 0 && (
             <section>
               <h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Top results</h2>
@@ -552,6 +559,10 @@ export default function Search() {
             </section>
           )}
 
+          {(activeFilter === 'all' || activeFilter === 'playlists') && (
+            <DeezerPlaylistResults query={debouncedQuery} />
+          )}
+
           {showMixes && (
             <MixesResults query={debouncedQuery} />
           )}
@@ -577,6 +588,65 @@ export default function Search() {
       />
     </div>
 
+  );
+}
+
+/** Placeholder rows shown while search results stream in. */
+function ResultSkeletons({ count = 8 }: { count?: number }) {
+  return (
+    <div>
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="flex items-center gap-3 py-2">
+          <div className="h-[52px] w-[52px] shrink-0 animate-pulse rounded-[3px] bg-muted/30" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="h-3.5 w-2/3 animate-pulse rounded bg-muted/30" />
+            <div className="h-3 w-1/3 animate-pulse rounded bg-muted/20" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Deezer playlists matching the query. */
+function DeezerPlaylistResults({ query }: { query: string }) {
+  const navigate = useNavigate();
+  const { data, isLoading } = useQuery({
+    queryKey: ["search-deezer-playlists", query],
+    queryFn: async () => {
+      const { searchPlaylists, transformPlaylist } = await import("@/services/deezer");
+      const raw = await searchPlaylists(query, 12);
+      return (raw || []).map(transformPlaylist);
+    },
+    enabled: !!query && query.length >= 2,
+    staleTime: 30 * 60 * 1000,
+  });
+
+  if (isLoading) {
+    return (
+      <section>
+        <h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Playlists</h2>
+        <ResultSkeletons count={4} />
+      </section>
+    );
+  }
+  if (!data?.length) return null;
+
+  return (
+    <section>
+      <h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Playlists</h2>
+      <div>
+        {data.map((p: any) => (
+          <button key={p.id} onClick={() => navigate(`/playlist/${p.id}`)} className="flex w-full items-center gap-3 py-2 text-left">
+            <img src={p.cover} alt="" loading="lazy" className="h-[52px] w-[52px] shrink-0 rounded-[3px] bg-muted/30 object-cover" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[16px] font-normal leading-tight text-foreground">{p.title}</p>
+              <p className="mt-1 truncate text-[13px] text-muted-foreground">Playlist • {p.creator}</p>
+            </div>
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }
 
