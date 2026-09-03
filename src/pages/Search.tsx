@@ -30,11 +30,10 @@ function addToSearchHistory(query: string) { if (!query.trim()) return; const h 
 function removeFromSearchHistory(query: string) { localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(getSearchHistory().filter(h => h !== query))); }
 function clearSearchHistory() { localStorage.removeItem(SEARCH_HISTORY_KEY); }
 
-type FilterType = 'all' | 'tracks' | 'artists' | 'albums' | 'playlists' | 'mixes';
+type FilterType = 'all' | 'tracks' | 'albums' | 'playlists' | 'mixes';
 const filterOptions: { type: FilterType; label: string; icon: React.ReactNode }[] = [
   { type: 'all', label: 'All', icon: null },
   { type: 'tracks', label: 'Songs', icon: <Music className="h-3 w-3" /> },
-  { type: 'artists', label: 'Artists', icon: <User className="h-3 w-3" /> },
   { type: 'albums', label: 'Albums', icon: <Disc className="h-3 w-3" /> },
   { type: 'playlists', label: 'Playlists', icon: <Music className="h-3 w-3" /> },
   { type: 'mixes', label: 'Mixes', icon: <Radio className="h-3 w-3" /> },
@@ -90,6 +89,23 @@ function rankedScore(
   for (const g of taste.genres) {
     if (g && (artist.includes(g) || album.includes(g))) { score += 8; break; }
   }
+  return score;
+}
+
+/**
+ * Albums are ordered by fame rather than raw relevance: full-length records by
+ * artists that dominate the song results outrank obscure singles/compilations.
+ */
+function albumFameScore(album: any, famousArtists: Map<string, number>): number {
+  const tracks = Number(album.trackCount || album.nb_tracks || 0);
+  let score = 0;
+  if (tracks >= 10) score += 60;
+  else if (tracks >= 6) score += 40;
+  else if (tracks >= 3) score += 15;
+  const artistRank = famousArtists.get((album.artist || "").toLowerCase());
+  if (artistRank !== undefined) score += Math.max(0, 80 - artistRank * 6);
+  if (/(deluxe|remaster|edition)/i.test(album.title || "")) score += 8;
+  if (/(karaoke|tribute|cover|instrumental|made popular)/i.test(album.title || "")) score -= 120;
   return score;
 }
 
@@ -248,10 +264,21 @@ export default function Search() {
     : [];
   const filteredArtists: Artist[] = liveArtists.length ? liveArtists : (cached?.artists || []);
 
+  // Fame map: artists that own the top song results, most popular first.
+  const famousArtists = useMemo(() => {
+    const m = new Map<string, number>();
+    liveTracks.forEach((t) => {
+      const k = (t.artist || "").toLowerCase();
+      if (k && !m.has(k)) m.set(k, m.size);
+    });
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveTracks.length, debouncedQuery]);
+
   const liveAlbums: Album[] = hasApiResults
     ? searchResults.albums.map((a) => ({ id: a.id, title: a.name, artist: a.artist, artwork: a.artwork || '', trackCount: a.trackCount || 0 }))
         .filter((a) => !isBlockedArtist(a.artist, blocked))
-        .sort((a, b) => rankedScore(debouncedQuery, b, taste) - rankedScore(debouncedQuery, a, taste))
+        .sort((a, b) => albumFameScore(b, famousArtists) - albumFameScore(a, famousArtists))
     : [];
   const filteredAlbums: Album[] = liveAlbums.length ? liveAlbums : (cached?.albums || []);
 
@@ -277,7 +304,6 @@ export default function Search() {
 
   usePreloadYouTube(filteredTracks.slice(0, 10), filteredTracks.length > 0);
 
-  const showArtists = activeFilter === 'all' || activeFilter === 'artists';
   const showTracks = activeFilter === 'all' || activeFilter === 'tracks';
   const showAlbums = activeFilter === 'all' || activeFilter === 'albums';
   const showPlaylists = activeFilter === 'all' || activeFilter === 'playlists';
@@ -313,7 +339,6 @@ export default function Search() {
 
   const topItems = [
     ...dedupedTracks.map(t => ({ type: 'track' as const, score: scoreMatch(debouncedQuery, t), item: t })),
-    ...dedupedArtists.map(a => ({ type: 'artist' as const, score: scoreMatch(debouncedQuery, { name: a.name }), item: a })),
     ...dedupedAlbums.map(a => ({ type: 'album' as const, score: scoreMatch(debouncedQuery, { title: a.title, artist: a.artist }), item: a })),
     ...matchingPlaylists.map(p => ({ type: 'playlist' as const, score: scoreMatch(debouncedQuery, { title: p.name }), item: p })),
   ].sort((a, b) => b.score - a.score);
@@ -394,6 +419,13 @@ export default function Search() {
 
           {/* Unified top results list — sorted by relevance, unlimited scroll */}
 
+          {(loadingUnified || isLoading) && topItems.length === 0 && activeFilter !== 'mixes' && (
+            <section>
+              <h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Top results</h2>
+              <ResultSkeletons count={10} />
+            </section>
+          )}
+
           {activeFilter === 'all' && topItems.length > 0 && (
             <section>
               <h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Top results</h2>
@@ -441,23 +473,6 @@ export default function Search() {
 
                   }
 
-                  if (entry.type === 'artist') {
-                    const a = entry.item as Artist;
-                    return (
-                      <motion.div key={`ar-${a.id}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                        className="flex cursor-pointer items-center gap-3 py-2"
-                        onClick={() => {
-                          addRecentSearchItem({ id: String(a.id), kind: "artist", title: a.name, subtitle: "Artist", artwork: a.avatar, query: a.name });
-                          navigate(`/artist/${encodeURIComponent(a.name)}`);
-                        }}>
-                        <img src={a.avatar} alt="" className="h-[52px] w-[52px] shrink-0 rounded-full bg-muted/30 object-cover" />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-[16px] font-normal leading-tight text-foreground">{a.name}</p>
-                          <p className="mt-1 truncate text-[13px] text-muted-foreground">Artist</p>
-                        </div>
-                      </motion.div>
-                    );
-                  }
                   if (entry.type === 'album') {
                     const al = entry.item as Album;
                     return (
@@ -502,20 +517,6 @@ export default function Search() {
           )}
 
           {/* Filtered views */}
-          {showArtists && activeFilter === 'artists' && dedupedArtists.length > 0 && (
-            <section><h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Artists</h2>
-              <div>{dedupedArtists.map((a, i) => (
-                <motion.div key={a.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                  className="flex cursor-pointer items-center gap-3 py-2" onClick={() => navigate(`/artist/${encodeURIComponent(a.name)}`)}>
-                  <img src={a.avatar} alt="" className="h-[52px] w-[52px] shrink-0 rounded-full bg-muted/30 object-cover" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[16px] font-normal leading-tight text-foreground">{a.name}</p>
-                    <p className="mt-1 text-[13px] text-muted-foreground">Artist</p>
-                  </div>
-                </motion.div>
-              ))}</div>
-            </section>
-          )}
           {showTracks && activeFilter === 'tracks' && dedupedTracks.length > 0 && (
             <section><h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Songs</h2>
               <div>{dedupedTracks.map((t, i) => (
@@ -558,6 +559,10 @@ export default function Search() {
             </section>
           )}
 
+          {(activeFilter === 'all' || activeFilter === 'playlists') && (
+            <DeezerPlaylistResults query={debouncedQuery} />
+          )}
+
           {showMixes && (
             <MixesResults query={debouncedQuery} />
           )}
@@ -583,6 +588,65 @@ export default function Search() {
       />
     </div>
 
+  );
+}
+
+/** Placeholder rows shown while search results stream in. */
+function ResultSkeletons({ count = 8 }: { count?: number }) {
+  return (
+    <div>
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="flex items-center gap-3 py-2">
+          <div className="h-[52px] w-[52px] shrink-0 animate-pulse rounded-[3px] bg-muted/30" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="h-3.5 w-2/3 animate-pulse rounded bg-muted/30" />
+            <div className="h-3 w-1/3 animate-pulse rounded bg-muted/20" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Deezer playlists matching the query. */
+function DeezerPlaylistResults({ query }: { query: string }) {
+  const navigate = useNavigate();
+  const { data, isLoading } = useQuery({
+    queryKey: ["search-deezer-playlists", query],
+    queryFn: async () => {
+      const { searchPlaylists, transformPlaylist } = await import("@/services/deezer");
+      const raw = await searchPlaylists(query, 12);
+      return (raw || []).map(transformPlaylist);
+    },
+    enabled: !!query && query.length >= 2,
+    staleTime: 30 * 60 * 1000,
+  });
+
+  if (isLoading) {
+    return (
+      <section>
+        <h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Playlists</h2>
+        <ResultSkeletons count={4} />
+      </section>
+    );
+  }
+  if (!data?.length) return null;
+
+  return (
+    <section>
+      <h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Playlists</h2>
+      <div>
+        {data.map((p: any) => (
+          <button key={p.id} onClick={() => navigate(`/playlist/${p.id}`)} className="flex w-full items-center gap-3 py-2 text-left">
+            <img src={p.cover} alt="" loading="lazy" className="h-[52px] w-[52px] shrink-0 rounded-[3px] bg-muted/30 object-cover" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[16px] font-normal leading-tight text-foreground">{p.title}</p>
+              <p className="mt-1 truncate text-[13px] text-muted-foreground">Playlist • {p.creator}</p>
+            </div>
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }
 
