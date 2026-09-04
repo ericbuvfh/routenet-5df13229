@@ -68,7 +68,7 @@ export function DesktopPlayerBar() {
 
   return (
     <>
-      <footer className="hidden h-[88px] shrink-0 grid-cols-[minmax(220px,1fr)_minmax(360px,1.5fr)_minmax(200px,1fr)] items-center border-t border-border bg-background-elevated px-4 lg:grid">
+      <footer className="hidden h-[88px] shrink-0 grid-cols-[minmax(220px,1fr)_minmax(360px,1.5fr)_minmax(200px,1fr)] items-center bg-background-elevated px-4 lg:grid">
         <div className="flex min-w-0 items-center gap-3">
           <button onClick={() => navigate("/now-playing")} className="flex min-w-0 items-center gap-3 text-left">
             <img src={currentTrack.artwork || "/placeholder.svg"} alt="" className="h-14 w-14 rounded-md object-cover" />

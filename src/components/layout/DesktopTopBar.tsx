@@ -8,7 +8,7 @@ export function DesktopTopBar() {
   const { user } = useAuth();
 
   return (
-    <header className="hidden h-16 shrink-0 items-center gap-2 border-b border-border bg-background/90 px-5 backdrop-blur-xl lg:flex">
+    <header className="hidden h-16 shrink-0 items-center gap-2 bg-background/90 px-5 backdrop-blur-xl lg:flex">
       <Button
         variant="secondary"
         size="icon"
