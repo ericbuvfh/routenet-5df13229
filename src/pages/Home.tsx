@@ -12,6 +12,7 @@ import { QuickAccessGrid } from "@/components/home/QuickAccessGrid";
 import { recordTasteEvent } from "@/services/tasteEvents";
 import { AppLogo } from "@/components/brand/AppLogo";
 import { HomeFilterPills, type HomeFilter } from "@/components/home/HomeFilterPills";
+import { NativeAdSlot } from "@/components/home/NativeAdSlot";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -163,8 +164,11 @@ export default function Home() {
 
       <main className="relative space-y-4 px-4 pt-2">
         <QuickAccessGrid />
-        {visibleSections.map((section) => (
-          <HomeSectionRow key={section.id} section={section} onPlay={handlePlay} />
+        {visibleSections.map((section, i) => (
+          <div key={section.id} className="space-y-4">
+            <HomeSectionRow section={section} onPlay={handlePlay} />
+            {i === 2 && <NativeAdSlot />}
+          </div>
         ))}
         {visibleSections.length === 0 && (
           <p className="py-12 text-center text-sm text-muted-foreground">Nothing here yet — try another filter.</p>
