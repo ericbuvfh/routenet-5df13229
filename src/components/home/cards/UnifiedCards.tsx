@@ -41,7 +41,7 @@ function fmtViews(views?: number) {
  * like button and an overflow menu.
  */
 export function SongListRow({
-  track, onPlay, onLike, onMore, liked,
+  track, onPlay,
 }: {
   track: Track;
   onPlay: () => void;
@@ -49,36 +49,26 @@ export function SongListRow({
   onMore?: () => void;
   liked?: boolean;
 }) {
-  const album = (track as any).album as string | undefined;
   return (
-    <div className="group flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-secondary/60">
-      <button onClick={onPlay} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-        <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-secondary">
-          {track.artwork ? (
-            <img src={track.artwork} alt={track.title} loading="lazy" decoding="async" className="h-full w-full object-cover" />
-          ) : null}
-          <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-            <Play className="h-4 w-4 text-white" fill="currentColor" />
-          </span>
+    <div
+      onClick={onPlay}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onPlay(); }}
+      className="group flex cursor-pointer items-center gap-3 py-2"
+    >
+      <div className="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-[3px] bg-muted/30">
+        {track.artwork ? (
+          <img src={track.artwork} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+        ) : null}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+          <Play className="h-5 w-5 text-white" fill="currentColor" />
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-normal leading-[20px] text-foreground">{toTitleCase(track.title)}</p>
-          <p className="truncate text-[13px] font-normal leading-[17px] text-muted-foreground">
-            {[toTitleCase(track.artist), album || ""].filter(Boolean).join(" • ")}
-          </p>
-        </div>
-      </button>
-      <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">{fmtDuration(track.duration)}</span>
-      <button
-        onClick={onLike}
-        aria-label="Like"
-        className={cn("shrink-0 rounded-full p-1.5 transition-colors", liked ? "text-primary" : "text-muted-foreground hover:text-foreground")}
-      >
-        <Heart className="h-4 w-4" fill={liked ? "currentColor" : "none"} />
-      </button>
-      <button onClick={onMore} aria-label="More options" className="shrink-0 rounded-full p-1.5 text-muted-foreground hover:text-foreground">
-        <MoreHorizontal className="h-4 w-4" />
-      </button>
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[16px] font-normal leading-tight text-foreground">{toTitleCase(track.title)}</p>
+        <p className="mt-1 truncate text-[13px] text-muted-foreground">Song • {toTitleCase(track.artist)}</p>
+      </div>
     </div>
   );
 }
