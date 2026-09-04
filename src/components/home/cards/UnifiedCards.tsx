@@ -160,10 +160,11 @@ export function VideoListColumn({ children }: { children: React.ReactNode }) {
 
 export function ListSkeleton() {
   return (
-    <div className="w-[86vw] shrink-0 space-y-2 sm:w-[62vw] md:w-[46vw] lg:w-[34vw] max-w-[420px]">
+    <div className="w-[46vw] shrink-0 space-y-1.5 sm:w-[36vw] md:w-[28vw] lg:w-[22vw] max-w-[300px]">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3">
-          <div className="h-[52px] w-[52px] animate-pulse rounded-[3px] bg-secondary/60" />
+        <div key={i} className="flex items-center gap-2.5">
+          <div className="h-[44px] w-[44px] animate-pulse rounded-[3px] bg-secondary/60" />
+
           <div className="flex-1 space-y-1.5">
             <div className="h-3 w-2/3 animate-pulse rounded bg-secondary/60" />
             <div className="h-3 w-1/3 animate-pulse rounded bg-secondary/40" />
