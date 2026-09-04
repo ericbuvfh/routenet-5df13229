@@ -1,4 +1,4 @@
-import { Play, Heart, MoreHorizontal, Eye } from "lucide-react";
+import { Play, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toTitleCase } from "@/utils/toTitleCase";
 import type { Track } from "@/data/mockData";
@@ -162,7 +162,7 @@ export function ListSkeleton() {
     <div className="w-[86vw] shrink-0 space-y-2 sm:w-[62vw] md:w-[46vw] lg:w-[34vw] max-w-[420px]">
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="flex items-center gap-3">
-          <div className="h-11 w-11 animate-pulse rounded-lg bg-secondary/60" />
+          <div className="h-[52px] w-[52px] animate-pulse rounded-[3px] bg-secondary/60" />
           <div className="flex-1 space-y-1.5">
             <div className="h-3 w-2/3 animate-pulse rounded bg-secondary/60" />
             <div className="h-3 w-1/3 animate-pulse rounded bg-secondary/40" />
