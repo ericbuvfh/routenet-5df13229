@@ -33,7 +33,7 @@ function writeLS<T>(key: string, entry: CacheEntry<T>) {
 export function peekCached<T>(key: string): T | null {
   const now = Date.now();
   const mem = memory.get(key);
-  if (mem && mem.expiresAt > now) return mem.value as T;
+  if (mem && (mem.expiresAt > now || isOffline())) return mem.value as T;
   const ls = readLS<T>(key);
   if (ls) { memory.set(key, ls); return ls.value; }
   return null;
@@ -42,7 +42,7 @@ export function peekCached<T>(key: string): T | null {
 export async function cached<T>(key: string, ttlMs: number, fn: () => Promise<T>): Promise<T> {
   const now = Date.now();
   const mem = memory.get(key);
-  if (mem && mem.expiresAt > now) return mem.value as T;
+  if (mem && (mem.expiresAt > now || isOffline())) return mem.value as T;
   const ls = readLS<T>(key);
   if (ls) { memory.set(key, ls); return ls.value; }
   const pending = inflight.get(key);
