@@ -240,7 +240,7 @@ export default function NowPlaying() {
 
 
       {/* Control deck */}
-      <section className="relative z-10 shrink-0 px-6 pb-[calc(2.25rem+env(safe-area-inset-bottom))] pt-3">
+      <section className="relative z-10 shrink-0 px-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-3">
         <Slider
           value={[localProgress * 100]}
           max={100}
@@ -258,18 +258,18 @@ export default function NowPlaying() {
           <Button variant="ghost" size="icon" onClick={toggleShuffle} aria-label="Shuffle" aria-pressed={shuffle} className={cn("h-11 w-11 rounded-full text-muted-foreground hover:bg-foreground/10 hover:text-foreground", shuffle && "text-primary")}>
             <Shuffle className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={previous} aria-label="Previous track" className="h-12 w-12 rounded-full text-foreground transition-transform hover:bg-foreground/10 active:scale-90">
+          <Button variant="ghost" size="icon" onClick={previous} aria-label="Previous track" className="h-12 w-12 rounded-full text-foreground transition-transform duration-150 hover:bg-foreground/10 active:scale-[0.82] active:bg-foreground/15">
             <SkipBack className="h-7 w-7" fill="currentColor" />
           </Button>
           <Button
             onClick={togglePlay}
             disabled={isResolving}
             aria-label={isPlaying ? "Pause" : "Play"}
-            className="flex h-[64px] w-[64px] items-center justify-center rounded-full bg-foreground p-0 text-background shadow-[0_10px_30px_-10px_hsl(var(--foreground)/0.5)] transition-transform hover:scale-[1.03] active:scale-95"
+            className="flex h-[64px] w-[64px] items-center justify-center rounded-full bg-foreground p-0 text-background shadow-[0_10px_30px_-10px_hsl(var(--foreground)/0.5)] transition-transform duration-150 hover:scale-[1.03] active:scale-[0.88]"
           >
             {isResolving ? <Loader2 className="h-7 w-7 animate-spin" /> : isPlaying ? <Pause className="h-7 w-7" fill="currentColor" /> : <Play className="ml-1 h-7 w-7" fill="currentColor" />}
           </Button>
-          <Button variant="ghost" size="icon" onClick={next} aria-label="Next track" className="h-12 w-12 rounded-full text-foreground transition-transform hover:bg-foreground/10 active:scale-90">
+          <Button variant="ghost" size="icon" onClick={next} aria-label="Next track" className="h-12 w-12 rounded-full text-foreground transition-transform duration-150 hover:bg-foreground/10 active:scale-[0.82] active:bg-foreground/15">
             <SkipForward className="h-7 w-7" fill="currentColor" />
           </Button>
           <Button variant="ghost" size="icon" onClick={toggleRepeat} aria-label={`Repeat: ${repeat}`} className={cn("h-11 w-11 rounded-full text-muted-foreground hover:bg-foreground/10 hover:text-foreground", repeat !== "off" && "text-primary")}>

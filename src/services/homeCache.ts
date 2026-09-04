@@ -9,12 +9,18 @@ const inflight = new Map<string, Promise<any>>();
 
 const LS_PREFIX = "routenet.homeCache.v1:";
 
+/** Offline devices keep serving whatever was cached, however stale. */
+function isOffline() {
+  try { return typeof navigator !== "undefined" && navigator.onLine === false; } catch { return false; }
+}
+
 function readLS<T>(key: string): CacheEntry<T> | null {
   try {
     const raw = localStorage.getItem(LS_PREFIX + key);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as CacheEntry<T>;
-    if (!parsed || parsed.expiresAt < Date.now()) return null;
+    if (!parsed) return null;
+    if (parsed.expiresAt < Date.now() && !isOffline()) return null;
     return parsed;
   } catch { return null; }
 }
