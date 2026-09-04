@@ -11,7 +11,36 @@ serve(async (req) => {
   }
 
   try {
-    const { title, artist } = await req.json();
+    const { title, artist, q } = await req.json();
+
+    // Lyric-phrase search: find songs whose lyrics contain the query.
+    if (q && String(q).trim()) {
+      try {
+        const res = await fetch(
+          `https://lrclib.net/api/search?q=${encodeURIComponent(String(q).trim())}`,
+          { signal: AbortSignal.timeout(6000) },
+        );
+        if (res.ok) {
+          const rows = await res.json();
+          const results = (Array.isArray(rows) ? rows : []).slice(0, 20).map((r: any) => ({
+            id: String(r.id),
+            title: r.trackName,
+            artist: r.artistName,
+            album: r.albumName || null,
+            duration: r.duration || null,
+            snippet: (r.plainLyrics || "")
+              .split("\n")
+              .find((l: string) => l.toLowerCase().includes(String(q).toLowerCase().trim())) || null,
+          }));
+          return new Response(JSON.stringify({ results }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } catch (_) { /* fallthrough */ }
+      return new Response(JSON.stringify({ results: [] }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (!title || !artist) {
       return new Response(JSON.stringify({ error: "title and artist required" }), {
@@ -19,6 +48,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
 
     // Try lrclib FIRST (faster, supports synced lyrics)
     try {
