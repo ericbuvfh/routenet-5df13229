@@ -9,12 +9,18 @@ const inflight = new Map<string, Promise<any>>();
 
 const LS_PREFIX = "routenet.homeCache.v1:";
 
+/** Offline devices keep serving whatever was cached, however stale. */
+function isOffline() {
+  try { return typeof navigator !== "undefined" && navigator.onLine === false; } catch { return false; }
+}
+
 function readLS<T>(key: string): CacheEntry<T> | null {
   try {
     const raw = localStorage.getItem(LS_PREFIX + key);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as CacheEntry<T>;
-    if (!parsed || parsed.expiresAt < Date.now()) return null;
+    if (!parsed) return null;
+    if (parsed.expiresAt < Date.now() && !isOffline()) return null;
     return parsed;
   } catch { return null; }
 }
@@ -27,7 +33,7 @@ function writeLS<T>(key: string, entry: CacheEntry<T>) {
 export function peekCached<T>(key: string): T | null {
   const now = Date.now();
   const mem = memory.get(key);
-  if (mem && mem.expiresAt > now) return mem.value as T;
+  if (mem && (mem.expiresAt > now || isOffline())) return mem.value as T;
   const ls = readLS<T>(key);
   if (ls) { memory.set(key, ls); return ls.value; }
   return null;
@@ -36,7 +42,7 @@ export function peekCached<T>(key: string): T | null {
 export async function cached<T>(key: string, ttlMs: number, fn: () => Promise<T>): Promise<T> {
   const now = Date.now();
   const mem = memory.get(key);
-  if (mem && mem.expiresAt > now) return mem.value as T;
+  if (mem && (mem.expiresAt > now || isOffline())) return mem.value as T;
   const ls = readLS<T>(key);
   if (ls) { memory.set(key, ls); return ls.value; }
   const pending = inflight.get(key);
