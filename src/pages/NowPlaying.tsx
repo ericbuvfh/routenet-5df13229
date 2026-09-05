@@ -134,14 +134,14 @@ export default function NowPlaying() {
           transition={{ duration: 0.8 }}
           className="pointer-events-none absolute inset-0"
           style={{
-            backgroundImage: `url(${currentTrack.artwork})`,
+            backgroundImage: `url(${display.artwork || currentTrack.artwork})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
-            filter: "blur(90px) saturate(140%) brightness(0.35)",
+            filter: "blur(46px) saturate(160%) brightness(0.55)",
           }}
         />
       </AnimatePresence>
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,hsl(0_0%_0%/0.55)_0%,hsl(0_0%_0%/0.8)_55%,hsl(var(--background))_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,hsl(0_0%_0%/0.35)_0%,hsl(0_0%_0%/0.6)_55%,hsl(0_0%_0%/0.88)_100%)]" />
 
       {/* Top bar — centred title + artist */}
       <header className="relative z-10 flex shrink-0 items-center justify-between gap-2 px-4 pt-[calc(0.75rem+env(safe-area-inset-top))]">
@@ -205,7 +205,7 @@ export default function NowPlaying() {
               style={{ background: "linear-gradient(115deg, hsl(0 0% 100% / 0.14) 0%, transparent 38%, transparent 62%, hsl(0 0% 100% / 0.08) 100%)" }}
             />
             {/* Centre label = artwork */}
-            <div className="absolute inset-[27%] overflow-hidden rounded-full border border-foreground/15 bg-card shadow-[0_6px_20px_-6px_hsl(0_0%_0%/0.8)]">
+            <div className="absolute inset-[14%] overflow-hidden rounded-full border border-foreground/15 bg-card shadow-[0_6px_20px_-6px_hsl(0_0%_0%/0.8)]">
               {isResolving ? (
                 <div className="flex h-full w-full items-center justify-center bg-secondary">
                   <Loader2 className="h-7 w-7 animate-spin text-primary" />
@@ -240,7 +240,7 @@ export default function NowPlaying() {
 
 
       {/* Control deck */}
-      <section className="relative z-10 shrink-0 px-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-3">
+      <section className="relative z-10 shrink-0 px-6 pt-3">
         <Slider
           value={[localProgress * 100]}
           max={100}
@@ -277,21 +277,20 @@ export default function NowPlaying() {
           </Button>
         </div>
 
-        {/* Lyrics bar */}
+      </section>
+
+      {/* Lyrics bar — anchored below every other control */}
+      <section className="relative z-10 shrink-0 px-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-4">
         <button
           type="button"
           onClick={() => navigate("/lyrics")}
-          className="mt-4 flex w-full items-center justify-center rounded-xl bg-foreground/[0.07] px-4 py-3 transition-colors hover:bg-foreground/[0.12] active:scale-[0.99]"
+          className="flex w-full items-center justify-center rounded-xl bg-foreground/[0.07] px-4 py-3 transition-colors hover:bg-foreground/[0.12] active:scale-[0.99]"
         >
           <span className="flex items-center justify-center gap-2 text-center text-[14px] font-semibold text-foreground">
             <Mic2 className="h-4 w-4" /> Show Lyrics
           </span>
         </button>
-
-
       </section>
-
-
 
       <AnimatePresence>
         {showMore && (
