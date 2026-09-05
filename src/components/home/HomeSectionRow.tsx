@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import type { SectionDescriptor, SectionResult } from "@/services/homeFeedEngine";
 import type { Track } from "@/data/mockData";
 import { cached, peekCached } from "@/services/homeCache";
+import { NativeAdSlot } from "@/components/home/NativeAdSlot";
 import { SongCard, AlbumCard, PlaylistCard, ArtistCard, CardSkeleton, SongListRow, SongListColumn, MusicVideoCard, MusicVideoListItem, VideoListColumn, ListSkeleton, VideoSkeleton } from "./cards/UnifiedCards";
 
 interface Props {
@@ -93,13 +94,21 @@ export function HomeSectionRow({ section, onPlay }: Props) {
       const songs = data.songs.slice(0, 16);
       const columns: Track[][] = [];
       for (let i = 0; i < songs.length; i += 4) columns.push(songs.slice(i, i + 4));
-      return columns.map((col, ci) => (
+      const cols = columns.map((col, ci) => (
         <SongListColumn key={`col-${ci}`}>
           {col.map((t) => (
             <SongListRow key={t.id} track={t} onPlay={() => onPlay(t, songs)} />
           ))}
         </SongListColumn>
       ));
+      // A compact native ad closes out every song-list row.
+      cols.push(
+        <SongListColumn key="ad">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Sponsored</p>
+          <NativeAdSlot clone />
+        </SongListColumn>,
+      );
+      return cols;
     }
     if (data.songs?.length) {
       return data.songs.slice(0, 20).map((t) => (

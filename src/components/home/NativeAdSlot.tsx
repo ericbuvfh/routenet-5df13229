@@ -28,7 +28,7 @@ export function NativeAdSlot({ clone = false, className = "" }: { clone?: boolea
   }, [clone]);
 
   return (
-    <div className={`w-full overflow-hidden ${className}`}>
+    <div className={`native-ad w-full overflow-hidden ${className}`}>
       {clone ? <div ref={ref} data-native-ad-clone /> : <div id={CONTAINER_ID} />}
     </div>
   );
