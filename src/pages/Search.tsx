@@ -350,6 +350,15 @@ export default function Search() {
 
   const topResult = topItems[0];
 
+  // One flat result list — no per-type sections, just filtered by the pills.
+  const visibleItems = topItems.filter((e) =>
+    activeFilter === 'all' ? true
+    : activeFilter === 'tracks' ? e.type === 'track'
+    : activeFilter === 'albums' ? e.type === 'album'
+    : activeFilter === 'playlists' ? e.type === 'playlist'
+    : false,
+  );
+
 
 
   return (
@@ -425,17 +434,13 @@ export default function Search() {
           {/* Unified top results list — sorted by relevance, unlimited scroll */}
 
           {(loadingUnified || isLoading) && topItems.length === 0 && activeFilter !== 'mixes' && (
-            <section>
-              <h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Top results</h2>
-              <ResultSkeletons count={10} />
-            </section>
+            <ResultSkeletons count={10} />
           )}
 
-          {activeFilter === 'all' && topItems.length > 0 && (
+          {activeFilter !== 'mixes' && visibleItems.length > 0 && (
             <section>
-              <h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Top results</h2>
               <div>
-                {topItems.map((entry, i) => {
+                {visibleItems.map((entry, i) => {
                   if (entry.type === 'track') {
                     const t = entry.item as Track;
                     return (
@@ -518,49 +523,6 @@ export default function Search() {
                   return null;
                 })}
               </div>
-            </section>
-          )}
-
-          {/* Filtered views */}
-          {showTracks && activeFilter === 'tracks' && dedupedTracks.length > 0 && (
-            <section><h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Songs</h2>
-              <div>{dedupedTracks.map((t, i) => (
-                <motion.div key={t.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.02, 0.3) }}
-                  className="group flex cursor-pointer items-center gap-3 py-2"
-                  onClick={() => playTrack(t, filteredTracks)}>
-                  <div className="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-[3px] bg-muted/30">
-                    <img src={t.artwork} alt="" loading="lazy" className="h-full w-full object-cover" />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                      <Play className="h-5 w-5 text-white" fill="currentColor" />
-                    </div>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[16px] font-normal leading-tight text-foreground">{t.title}</p>
-                    <p className="mt-1 truncate text-[13px] text-muted-foreground">Song • {t.artist}</p>
-                  </div>
-                  <SongActionsMenu
-                    track={t}
-                    open={menuTrackId === t.id}
-                    onToggle={() => setMenuTrackId(menuTrackId === t.id ? null : t.id)}
-                    onClose={() => setMenuTrackId(null)}
-                    onAddToPlaylist={() => { setMenuTrackId(null); setPlaylistTrack(t); }}
-                  />
-                </motion.div>
-              ))}</div>
-            </section>
-          )}
-          {showAlbums && activeFilter === 'albums' && dedupedAlbums.length > 0 && (
-            <section><h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Albums</h2>
-              <div>{dedupedAlbums.map((a, i) => (
-                <motion.div key={a.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                  className="flex cursor-pointer items-center gap-3 py-2" onClick={() => navigate(`/album/${a.id.toString().replace("deezer-", "")}`)}>
-                  <img src={a.artwork} alt="" className="h-[52px] w-[52px] shrink-0 rounded-[3px] bg-muted/30 object-cover" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[16px] font-normal leading-tight text-foreground">{a.title}</p>
-                    <p className="mt-1 truncate text-[13px] text-muted-foreground">Album • {a.artist}</p>
-                  </div>
-                </motion.div>
-              ))}</div>
             </section>
           )}
 
