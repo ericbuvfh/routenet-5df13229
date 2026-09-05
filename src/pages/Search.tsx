@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search as SearchIcon, Mic, MicOff, X, Loader2, Clock, User, Music, Disc, Radio, Play, MoreVertical, Plus, Download, ListPlus, ArrowLeft } from "lucide-react";
+import { Search as SearchIcon, Mic, MicOff, X, Loader2, Clock, User, Music, Disc, Radio, Play, MoreVertical, Plus, Download, ListPlus, ArrowLeft, Check } from "lucide-react";
 import { AddToPlaylistDialog } from "@/components/AddToPlaylistDialog";
 
 import { TrackCard } from "@/components/cards/TrackCard";
@@ -575,9 +575,11 @@ function ResultSkeletons({ count = 8 }: { count?: number }) {
   );
 }
 
-/** Deezer playlists matching the query. */
+/** Deezer playlists matching the query, with a one-tap save to the library. */
 function DeezerPlaylistResults({ query }: { query: string }) {
   const navigate = useNavigate();
+  const [saving, setSaving] = useState<string | null>(null);
+  const [saved, setSaved] = useState<Record<string, boolean>>({});
   const { data, isLoading } = useQuery({
     queryKey: ["search-deezer-playlists", query],
     queryFn: async () => {
@@ -589,31 +591,53 @@ function DeezerPlaylistResults({ query }: { query: string }) {
     staleTime: 30 * 60 * 1000,
   });
 
-  if (isLoading) {
-    return (
-      <section>
-        <h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Playlists</h2>
-        <ResultSkeletons count={4} />
-      </section>
-    );
-  }
+  const savePlaylist = async (p: any) => {
+    setSaving(String(p.id));
+    try {
+      const { getPlaylistTracks, transformTrack } = await import("@/services/deezer");
+      const { createPlaylist, addTracksToPlaylist } = await import("@/services/playlistService");
+      const raw = await getPlaylistTracks(p.id, 100);
+      const tracks = (raw || []).map(transformTrack).map((t: any) => ({
+        title: t.title, artist: t.artist, album: t.album,
+        artwork: t.artwork, duration: t.duration, preview: t.preview,
+      }));
+      const created = await createPlaylist(p.title, `Saved from ${p.creator || "Deezer"}`, false);
+      if (created) {
+        if (tracks.length) await addTracksToPlaylist(created.id, tracks);
+        setSaved((prev) => ({ ...prev, [p.id]: true }));
+      }
+    } catch { /* ignore */ } finally {
+      setSaving(null);
+    }
+  };
+
+  if (isLoading) return <ResultSkeletons count={4} />;
   if (!data?.length) return null;
 
   return (
-    <section>
-      <h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Playlists</h2>
-      <div>
-        {data.map((p: any) => (
-          <button key={p.id} onClick={() => navigate(`/playlist/${p.id}`)} className="flex w-full items-center gap-3 py-2 text-left">
+    <div>
+      {data.map((p: any) => (
+        <div key={p.id} className="flex w-full items-center gap-3 py-2">
+          <button onClick={() => navigate(`/playlist/${p.id}`)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
             <img src={p.cover} alt="" loading="lazy" className="h-[52px] w-[52px] shrink-0 rounded-[3px] bg-muted/30 object-cover" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-[16px] font-normal leading-tight text-foreground">{p.title}</p>
               <p className="mt-1 truncate text-[13px] text-muted-foreground">Playlist • {p.creator}</p>
             </div>
           </button>
-        ))}
-      </div>
-    </section>
+          <button
+            aria-label={saved[p.id] ? "Saved to library" : "Save to library"}
+            disabled={!!saving || saved[p.id]}
+            onClick={() => savePlaylist(p)}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground disabled:opacity-60"
+          >
+            {saving === String(p.id) ? <Loader2 className="h-4 w-4 animate-spin" />
+              : saved[p.id] ? <Check className="h-5 w-5 text-primary" />
+              : <Plus className="h-5 w-5" />}
+          </button>
+        </div>
+      ))}
+    </div>
   );
 }
 
