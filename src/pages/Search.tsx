@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search as SearchIcon, Mic, MicOff, X, Loader2, Clock, User, Music, Disc, Radio, Play, MoreVertical, Plus, Download, ListPlus, ArrowLeft } from "lucide-react";
+import { Search as SearchIcon, Mic, MicOff, X, Loader2, Clock, User, Music, Disc, Radio, Play, MoreVertical, Plus, Download, ListPlus, ArrowLeft, Check } from "lucide-react";
 import { AddToPlaylistDialog } from "@/components/AddToPlaylistDialog";
 
 import { TrackCard } from "@/components/cards/TrackCard";
@@ -191,10 +191,13 @@ function SongActionsMenu({ track, open, onToggle, onClose, onAddToPlaylist }: {
   );
 }
 
+/** Last query typed on this page — restored when the user navigates back. */
+const persistedSearch = { query: "" };
+
 export default function Search() {
   const navigate = useNavigate();
   const { playTrack } = usePlayer();
-  const { query, debouncedQuery, setQuery, clearQuery } = useDebouncedSearch(400);
+  const { query, debouncedQuery, setQuery, clearQuery } = useDebouncedSearch(400, persistedSearch.query);
   const [isFocused, setIsFocused] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
@@ -246,6 +249,8 @@ export default function Search() {
   }, [debouncedQuery, searchResults]);
 
   const hasQuery = query.length > 0;
+  // Keep the query alive across navigation so "back" restores the same results.
+  useEffect(() => { persistedSearch.query = query; }, [query]);
   const hasApiResults = searchResults && (searchResults.artists.length > 0 || searchResults.tracks.length > 0 || searchResults.albums.length > 0);
 
   // Songs come from Piped only (always playable). Deezer stays behind the
@@ -345,6 +350,15 @@ export default function Search() {
 
   const topResult = topItems[0];
 
+  // One flat result list — no per-type sections, just filtered by the pills.
+  const visibleItems = topItems.filter((e) =>
+    activeFilter === 'all' ? true
+    : activeFilter === 'tracks' ? e.type === 'track'
+    : activeFilter === 'albums' ? e.type === 'album'
+    : activeFilter === 'playlists' ? e.type === 'playlist'
+    : false,
+  );
+
 
 
   return (
@@ -357,7 +371,7 @@ export default function Search() {
         <div className="flex items-center gap-3">
           <button
             aria-label="Go back"
-            onClick={() => (hasQuery ? clearQuery() : navigate(-1))}
+            onClick={() => navigate(-1)}
             className="shrink-0 p-1 text-foreground"
           >
             <ArrowLeft className="h-6 w-6" />
@@ -365,7 +379,7 @@ export default function Search() {
           <div className="relative flex-1">
             <input
               type="text"
-              autoFocus
+              autoFocus={!persistedSearch.query}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => setIsFocused(true)}
@@ -420,17 +434,13 @@ export default function Search() {
           {/* Unified top results list — sorted by relevance, unlimited scroll */}
 
           {(loadingUnified || isLoading) && topItems.length === 0 && activeFilter !== 'mixes' && (
-            <section>
-              <h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Top results</h2>
-              <ResultSkeletons count={10} />
-            </section>
+            <ResultSkeletons count={10} />
           )}
 
-          {activeFilter === 'all' && topItems.length > 0 && (
+          {activeFilter !== 'mixes' && visibleItems.length > 0 && (
             <section>
-              <h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Top results</h2>
               <div>
-                {topItems.map((entry, i) => {
+                {visibleItems.map((entry, i) => {
                   if (entry.type === 'track') {
                     const t = entry.item as Track;
                     return (
@@ -516,49 +526,6 @@ export default function Search() {
             </section>
           )}
 
-          {/* Filtered views */}
-          {showTracks && activeFilter === 'tracks' && dedupedTracks.length > 0 && (
-            <section><h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Songs</h2>
-              <div>{dedupedTracks.map((t, i) => (
-                <motion.div key={t.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.02, 0.3) }}
-                  className="group flex cursor-pointer items-center gap-3 py-2"
-                  onClick={() => playTrack(t, filteredTracks)}>
-                  <div className="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-[3px] bg-muted/30">
-                    <img src={t.artwork} alt="" loading="lazy" className="h-full w-full object-cover" />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                      <Play className="h-5 w-5 text-white" fill="currentColor" />
-                    </div>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[16px] font-normal leading-tight text-foreground">{t.title}</p>
-                    <p className="mt-1 truncate text-[13px] text-muted-foreground">Song • {t.artist}</p>
-                  </div>
-                  <SongActionsMenu
-                    track={t}
-                    open={menuTrackId === t.id}
-                    onToggle={() => setMenuTrackId(menuTrackId === t.id ? null : t.id)}
-                    onClose={() => setMenuTrackId(null)}
-                    onAddToPlaylist={() => { setMenuTrackId(null); setPlaylistTrack(t); }}
-                  />
-                </motion.div>
-              ))}</div>
-            </section>
-          )}
-          {showAlbums && activeFilter === 'albums' && dedupedAlbums.length > 0 && (
-            <section><h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Albums</h2>
-              <div>{dedupedAlbums.map((a, i) => (
-                <motion.div key={a.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.03, 0.3) }}
-                  className="flex cursor-pointer items-center gap-3 py-2" onClick={() => navigate(`/album/${a.id.toString().replace("deezer-", "")}`)}>
-                  <img src={a.artwork} alt="" className="h-[52px] w-[52px] shrink-0 rounded-[3px] bg-muted/30 object-cover" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[16px] font-normal leading-tight text-foreground">{a.title}</p>
-                    <p className="mt-1 truncate text-[13px] text-muted-foreground">Album • {a.artist}</p>
-                  </div>
-                </motion.div>
-              ))}</div>
-            </section>
-          )}
-
           {(activeFilter === 'all' || activeFilter === 'playlists') && (
             <DeezerPlaylistResults query={debouncedQuery} />
           )}
@@ -608,9 +575,11 @@ function ResultSkeletons({ count = 8 }: { count?: number }) {
   );
 }
 
-/** Deezer playlists matching the query. */
+/** Deezer playlists matching the query, with a one-tap save to the library. */
 function DeezerPlaylistResults({ query }: { query: string }) {
   const navigate = useNavigate();
+  const [saving, setSaving] = useState<string | null>(null);
+  const [saved, setSaved] = useState<Record<string, boolean>>({});
   const { data, isLoading } = useQuery({
     queryKey: ["search-deezer-playlists", query],
     queryFn: async () => {
@@ -622,31 +591,53 @@ function DeezerPlaylistResults({ query }: { query: string }) {
     staleTime: 30 * 60 * 1000,
   });
 
-  if (isLoading) {
-    return (
-      <section>
-        <h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Playlists</h2>
-        <ResultSkeletons count={4} />
-      </section>
-    );
-  }
+  const savePlaylist = async (p: any) => {
+    setSaving(String(p.id));
+    try {
+      const { getPlaylistTracks, transformTrack } = await import("@/services/deezer");
+      const { createPlaylist, addTracksToPlaylist } = await import("@/services/playlistService");
+      const raw = await getPlaylistTracks(p.id, 100);
+      const tracks = (raw || []).map(transformTrack).map((t: any) => ({
+        title: t.title, artist: t.artist, album: t.album,
+        artwork: t.artwork, duration: t.duration, preview: t.preview,
+      }));
+      const created = await createPlaylist(p.title, `Saved from ${p.creator || "Deezer"}`, false);
+      if (created) {
+        if (tracks.length) await addTracksToPlaylist(created.id, tracks);
+        setSaved((prev) => ({ ...prev, [p.id]: true }));
+      }
+    } catch { /* ignore */ } finally {
+      setSaving(null);
+    }
+  };
+
+  if (isLoading) return <ResultSkeletons count={4} />;
   if (!data?.length) return null;
 
   return (
-    <section>
-      <h2 className="mb-2 text-[20px] font-extrabold tracking-tight text-foreground">Playlists</h2>
-      <div>
-        {data.map((p: any) => (
-          <button key={p.id} onClick={() => navigate(`/playlist/${p.id}`)} className="flex w-full items-center gap-3 py-2 text-left">
+    <div>
+      {data.map((p: any) => (
+        <div key={p.id} className="flex w-full items-center gap-3 py-2">
+          <button onClick={() => navigate(`/playlist/${p.id}`)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
             <img src={p.cover} alt="" loading="lazy" className="h-[52px] w-[52px] shrink-0 rounded-[3px] bg-muted/30 object-cover" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-[16px] font-normal leading-tight text-foreground">{p.title}</p>
               <p className="mt-1 truncate text-[13px] text-muted-foreground">Playlist • {p.creator}</p>
             </div>
           </button>
-        ))}
-      </div>
-    </section>
+          <button
+            aria-label={saved[p.id] ? "Saved to library" : "Save to library"}
+            disabled={!!saving || saved[p.id]}
+            onClick={() => savePlaylist(p)}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground disabled:opacity-60"
+          >
+            {saving === String(p.id) ? <Loader2 className="h-4 w-4 animate-spin" />
+              : saved[p.id] ? <Check className="h-5 w-5 text-primary" />
+              : <Plus className="h-5 w-5" />}
+          </button>
+        </div>
+      ))}
+    </div>
   );
 }
 

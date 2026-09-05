@@ -217,9 +217,9 @@ export function useTrendingYouTubeMusic(limit = 10) {
 }
 
 // Debounced search hook
-export function useDebouncedSearch(delay = 300) {
-  const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [query, setQuery] = useState('');
+export function useDebouncedSearch(delay = 300, initial = '') {
+  const [debouncedQuery, setDebouncedQuery] = useState(initial);
+  const [query, setQuery] = useState(initial);
   const [timeoutId, setTimeoutId] = useState<ReturnType<typeof setTimeout> | null>(null);
 
   const updateQuery = useCallback((newQuery: string) => {
