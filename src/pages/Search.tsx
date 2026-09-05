@@ -191,10 +191,13 @@ function SongActionsMenu({ track, open, onToggle, onClose, onAddToPlaylist }: {
   );
 }
 
+/** Last query typed on this page — restored when the user navigates back. */
+const persistedSearch = { query: "" };
+
 export default function Search() {
   const navigate = useNavigate();
   const { playTrack } = usePlayer();
-  const { query, debouncedQuery, setQuery, clearQuery } = useDebouncedSearch(400);
+  const { query, debouncedQuery, setQuery, clearQuery } = useDebouncedSearch(400, persistedSearch.query);
   const [isFocused, setIsFocused] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
@@ -246,6 +249,8 @@ export default function Search() {
   }, [debouncedQuery, searchResults]);
 
   const hasQuery = query.length > 0;
+  // Keep the query alive across navigation so "back" restores the same results.
+  useEffect(() => { persistedSearch.query = query; }, [query]);
   const hasApiResults = searchResults && (searchResults.artists.length > 0 || searchResults.tracks.length > 0 || searchResults.albums.length > 0);
 
   // Songs come from Piped only (always playable). Deezer stays behind the
@@ -357,7 +362,7 @@ export default function Search() {
         <div className="flex items-center gap-3">
           <button
             aria-label="Go back"
-            onClick={() => (hasQuery ? clearQuery() : navigate(-1))}
+            onClick={() => navigate(-1)}
             className="shrink-0 p-1 text-foreground"
           >
             <ArrowLeft className="h-6 w-6" />
@@ -365,7 +370,7 @@ export default function Search() {
           <div className="relative flex-1">
             <input
               type="text"
-              autoFocus
+              autoFocus={!persistedSearch.query}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => setIsFocused(true)}
