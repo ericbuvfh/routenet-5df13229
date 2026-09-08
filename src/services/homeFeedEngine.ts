@@ -742,8 +742,10 @@ const genreArtistsRow = (genreId: number | string, fallbackQuery: string, limit 
  * Five circular artist rows — related artists plus the top artists of the
  * listener's genres — surfaced after roughly five scrolls of the feed.
  */
-const ARTIST_ROWS_START_INDEX = 22;
-const ARTIST_ROWS_SPACING = 3;
+const ARTIST_ROWS_START_INDEX = 4;
+// Inserted rows count too, so a step of five leaves four regular sections
+// between each circular artist suggestion row.
+const ARTIST_ROWS_SPACING = 5;
 
 function circleArtistSections(input: FeedInput): SectionDescriptor[] {
   const artists = taste(input.followedArtists);

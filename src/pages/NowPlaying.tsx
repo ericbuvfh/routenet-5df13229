@@ -135,9 +135,10 @@ export default function NowPlaying() {
           className="pointer-events-none absolute inset-0"
           style={{
             backgroundImage: `url(${display.artwork || currentTrack.artwork})`,
-            backgroundSize: "cover",
+            backgroundSize: "contain",
             backgroundPosition: "center",
-            filter: "blur(46px) saturate(160%) brightness(0.55)",
+            backgroundRepeat: "no-repeat",
+            filter: "saturate(115%) brightness(0.5)",
           }}
         />
       </AnimatePresence>
@@ -280,7 +281,7 @@ export default function NowPlaying() {
       </section>
 
       {/* Lyrics bar — anchored below every other control */}
-      <section className="relative z-10 shrink-0 px-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-4">
+      <section className="relative z-10 mt-auto shrink-0 px-6 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-5 lg:pb-[6rem]">
         <button
           type="button"
           onClick={() => navigate("/lyrics")}

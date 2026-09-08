@@ -222,6 +222,31 @@ export function AlbumCard({ album, onClick }: {
   );
 }
 
+export function CompactAlbumCard({ album, onClick }: {
+  album: { id: string | number; title: string; cover: string; artist: string };
+  onClick: () => void;
+}) {
+  return (
+    <button onClick={onClick} className="group min-w-0 text-left transition-transform duration-200 active:scale-[0.97]">
+      <div className={cn("relative aspect-square", ART)}>
+        {album.cover
+          ? <img src={album.cover} alt={album.title} loading="lazy" decoding="async" className={IMG} />
+          : <div className="h-full w-full bg-secondary" />}
+      </div>
+      <p className="mt-1 line-clamp-1 text-[12px] font-semibold leading-4 text-foreground">{toTitleCase(album.title)}</p>
+      <p className="line-clamp-1 text-[10.5px] leading-4 text-muted-foreground">{toTitleCase(album.artist)}</p>
+    </button>
+  );
+}
+
+export function AlbumGridColumn({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="grid w-[72vw] max-w-[340px] shrink-0 snap-start grid-cols-2 gap-x-2.5 gap-y-3 sm:w-[52vw] md:w-[42vw] lg:w-[34vw]">
+      {children}
+    </div>
+  );
+}
+
 export function PlaylistCard({ playlist, onClick }: {
   playlist: { id: string | number; title: string; cover: string; creator?: string; description?: string };
   onClick: () => void;
