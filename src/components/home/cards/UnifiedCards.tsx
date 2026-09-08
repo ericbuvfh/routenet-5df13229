@@ -233,15 +233,15 @@ export function CompactAlbumCard({ album, onClick }: {
           ? <img src={album.cover} alt={album.title} loading="lazy" decoding="async" className={IMG} />
           : <div className="h-full w-full bg-secondary" />}
       </div>
-      <p className="mt-1 line-clamp-1 text-[12px] font-semibold leading-4 text-foreground">{toTitleCase(album.title)}</p>
-      <p className="line-clamp-1 text-[10.5px] leading-4 text-muted-foreground">{toTitleCase(album.artist)}</p>
+      <p className="mt-1 line-clamp-1 text-[11px] font-semibold leading-[14px] text-foreground sm:text-[12px]">{toTitleCase(album.title)}</p>
+      <p className="line-clamp-1 text-[9.5px] leading-[13px] text-muted-foreground sm:text-[10.5px]">{toTitleCase(album.artist)}</p>
     </button>
   );
 }
 
 export function AlbumGridColumn({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid w-[72vw] max-w-[340px] shrink-0 snap-start grid-cols-2 gap-x-2.5 gap-y-3 sm:w-[52vw] md:w-[42vw] lg:w-[34vw]">
+    <div className="grid w-[88vw] max-w-[460px] shrink-0 snap-start grid-cols-3 gap-x-2 gap-y-2.5 sm:w-[64vw] md:w-[54vw] lg:w-[45vw]">
       {children}
     </div>
   );
