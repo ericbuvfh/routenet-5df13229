@@ -4,7 +4,7 @@ import type { SectionDescriptor, SectionResult } from "@/services/homeFeedEngine
 import type { Track } from "@/data/mockData";
 import { cached, peekCached } from "@/services/homeCache";
 import { NativeAdSlot } from "@/components/home/NativeAdSlot";
-import { SongCard, AlbumCard, PlaylistCard, ArtistCard, CardSkeleton, SongListRow, SongListColumn, MusicVideoCard, MusicVideoListItem, VideoListColumn, ListSkeleton, VideoSkeleton } from "./cards/UnifiedCards";
+import { SongCard, AlbumCard, CompactAlbumCard, AlbumGridColumn, PlaylistCard, ArtistCard, CardSkeleton, SongListRow, SongListColumn, MusicVideoCard, MusicVideoListItem, VideoListColumn, ListSkeleton, VideoSkeleton } from "./cards/UnifiedCards";
 
 interface Props {
   section: SectionDescriptor;
@@ -116,6 +116,22 @@ export function HomeSectionRow({ section, onPlay }: Props) {
       ));
     }
     if (data.albums?.length) {
+      const isLatestRelease = /latest|new release|new in|new this year/i.test(`${section.id} ${section.title}`);
+      if (isLatestRelease) {
+        const releaseColumns = [];
+        const releases = data.albums.slice(0, 16);
+        for (let i = 0; i < releases.length; i += 4) {
+          const group = releases.slice(i, i + 4);
+          releaseColumns.push(
+            <AlbumGridColumn key={`release-column-${i / 4}`}>
+              {group.map((a) => (
+                <CompactAlbumCard key={a.id} album={a} onClick={() => navigate(`/album/${String(a.id).replace("deezer-", "")}`)} />
+              ))}
+            </AlbumGridColumn>,
+          );
+        }
+        return releaseColumns;
+      }
       return data.albums.slice(0, 20).map((a) => (
         <AlbumCard key={a.id} album={a} onClick={() => navigate(`/album/${String(a.id).replace("deezer-", "")}`)} />
       ));
