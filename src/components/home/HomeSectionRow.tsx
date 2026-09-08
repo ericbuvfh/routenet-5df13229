@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import type { SectionDescriptor, SectionResult } from "@/services/homeFeedEngine";
 import type { Track } from "@/data/mockData";
 import { cached, peekCached } from "@/services/homeCache";
-import { NativeAdSlot } from "@/components/home/NativeAdSlot";
 import { SongCard, AlbumCard, CompactAlbumCard, AlbumGridColumn, PlaylistCard, ArtistCard, CardSkeleton, SongListRow, SongListColumn, MusicVideoCard, MusicVideoListItem, VideoListColumn, ListSkeleton, VideoSkeleton } from "./cards/UnifiedCards";
 
 interface Props {
@@ -94,21 +93,13 @@ export function HomeSectionRow({ section, onPlay }: Props) {
       const songs = data.songs.slice(0, 16);
       const columns: Track[][] = [];
       for (let i = 0; i < songs.length; i += 4) columns.push(songs.slice(i, i + 4));
-      const cols = columns.map((col, ci) => (
+      return columns.map((col, ci) => (
         <SongListColumn key={`col-${ci}`}>
           {col.map((t) => (
             <SongListRow key={t.id} track={t} onPlay={() => onPlay(t, songs)} />
           ))}
         </SongListColumn>
       ));
-      // A compact native ad closes out every song-list row.
-      cols.push(
-        <SongListColumn key="ad">
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Sponsored</p>
-          <NativeAdSlot clone />
-        </SongListColumn>,
-      );
-      return cols;
     }
     if (data.songs?.length) {
       return data.songs.slice(0, 20).map((t) => (
@@ -116,25 +107,19 @@ export function HomeSectionRow({ section, onPlay }: Props) {
       ));
     }
     if (data.albums?.length) {
-      const isLatestRelease = /latest|new release|new in|new this year/i.test(`${section.id} ${section.title}`);
-      if (isLatestRelease) {
-        const releaseColumns = [];
-        const releases = data.albums.slice(0, 16);
-        for (let i = 0; i < releases.length; i += 4) {
-          const group = releases.slice(i, i + 4);
-          releaseColumns.push(
-            <AlbumGridColumn key={`release-column-${i / 4}`}>
-              {group.map((a) => (
-                <CompactAlbumCard key={a.id} album={a} onClick={() => navigate(`/album/${String(a.id).replace("deezer-", "")}`)} />
-              ))}
-            </AlbumGridColumn>,
-          );
-        }
-        return releaseColumns;
+      const albumColumns = [];
+      const albums = data.albums.slice(0, 27);
+      for (let i = 0; i < albums.length; i += 9) {
+        const group = albums.slice(i, i + 9);
+        albumColumns.push(
+          <AlbumGridColumn key={`album-grid-${i / 9}`}>
+            {group.map((a) => (
+              <CompactAlbumCard key={a.id} album={a} onClick={() => navigate(`/album/${String(a.id).replace("deezer-", "")}`)} />
+            ))}
+          </AlbumGridColumn>,
+        );
       }
-      return data.albums.slice(0, 20).map((a) => (
-        <AlbumCard key={a.id} album={a} onClick={() => navigate(`/album/${String(a.id).replace("deezer-", "")}`)} />
-      ));
+      return albumColumns;
     }
     if (data.playlists?.length) {
       return data.playlists.slice(0, 20).map((p) => (
