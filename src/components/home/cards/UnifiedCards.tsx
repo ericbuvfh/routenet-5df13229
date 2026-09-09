@@ -74,6 +74,35 @@ export function SongListRow({
 }
 
 /** A vertical stack of song rows; several stacks scroll horizontally. */
+/** Album row in the exact same list style as the song rows. */
+export function AlbumListRow({ album, onClick }: {
+  album: { id: string | number; title: string; cover: string; artist: string };
+  onClick: () => void;
+}) {
+  return (
+    <div
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick(); }}
+      className="group flex cursor-pointer items-center gap-2.5 py-1.5"
+    >
+      <div className="relative h-[44px] w-[44px] shrink-0 overflow-hidden rounded-[3px] bg-muted/30">
+        {album.cover ? (
+          <img src={album.cover} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+        ) : null}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+          <Play className="h-4 w-4 text-white" fill="currentColor" />
+        </div>
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[13.5px] font-normal leading-tight text-foreground">{toTitleCase(album.title)}</p>
+        <p className="mt-0.5 truncate text-[11.5px] text-muted-foreground">Album • {toTitleCase(album.artist)}</p>
+      </div>
+    </div>
+  );
+}
+
 export function SongListColumn({ children }: { children: React.ReactNode }) {
   return (
     <div className="w-[46vw] shrink-0 snap-start space-y-0.5 sm:w-[36vw] md:w-[28vw] lg:w-[22vw] max-w-[300px]">
