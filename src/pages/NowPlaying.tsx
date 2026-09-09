@@ -14,6 +14,7 @@ import { SyncedVideoPanel } from "@/components/nowplaying/SyncedVideoPanel";
 import { lookupMeta, peekMeta, type DeezerMeta } from "@/services/metadataEnrichment";
 
 import { toTitleCase } from "@/utils/toTitleCase";
+import { getDominantColor, gradientFromRGB } from "@/utils/dominantColor";
 
 /** Progress ring geometry (viewBox is 100x100). */
 const RING_R = 47;
@@ -62,6 +63,17 @@ export default function NowPlaying() {
     album: meta?.album || currentTrack?.album || "",
     artwork: meta?.artwork || currentTrack?.artwork || "",
   }), [meta, currentTrack]);
+
+  // Plain colour backdrop derived from the cover — no artwork image behind the page.
+  const [bgColor, setBgColor] = useState("linear-gradient(180deg, #2a2030 0%, #14121a 45%, #0a0a0a 100%)");
+  useEffect(() => {
+    let alive = true;
+    const art = display.artwork;
+    if (!art) return;
+    getDominantColor(art).then((c) => { if (alive) setBgColor(gradientFromRGB(c)); }).catch(() => undefined);
+    return () => { alive = false; };
+  }, [display.artwork]);
+
 
 
   useEffect(() => {
