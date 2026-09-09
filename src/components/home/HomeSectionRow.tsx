@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import type { SectionDescriptor, SectionResult } from "@/services/homeFeedEngine";
 import type { Track } from "@/data/mockData";
 import { cached, peekCached } from "@/services/homeCache";
-import { SongCard, AlbumCard, CompactAlbumCard, AlbumGridColumn, PlaylistCard, ArtistCard, CardSkeleton, SongListRow, SongListColumn, MusicVideoCard, MusicVideoListItem, VideoListColumn, ListSkeleton, VideoSkeleton } from "./cards/UnifiedCards";
+import { SongCard, PlaylistCard, ArtistCard, CardSkeleton, SongListRow, SongListColumn, AlbumListRow, MusicVideoListItem, VideoListColumn, ListSkeleton, VideoSkeleton } from "./cards/UnifiedCards";
 
 interface Props {
   section: SectionDescriptor;
@@ -107,19 +107,17 @@ export function HomeSectionRow({ section, onPlay }: Props) {
       ));
     }
     if (data.albums?.length) {
-      const albumColumns = [];
-      const albums = data.albums.slice(0, 27);
-      for (let i = 0; i < albums.length; i += 9) {
-        const group = albums.slice(i, i + 9);
-        albumColumns.push(
-          <AlbumGridColumn key={`album-grid-${i / 9}`}>
-            {group.map((a) => (
-              <CompactAlbumCard key={a.id} album={a} onClick={() => navigate(`/album/${String(a.id).replace("deezer-", "")}`)} />
-            ))}
-          </AlbumGridColumn>,
-        );
-      }
-      return albumColumns;
+      // Albums use the same stacked list style as the song rows.
+      const albums = data.albums.slice(0, 16);
+      const columns: typeof albums[] = [];
+      for (let i = 0; i < albums.length; i += 4) columns.push(albums.slice(i, i + 4));
+      return columns.map((col, ci) => (
+        <SongListColumn key={`albcol-${ci}`}>
+          {col.map((a) => (
+            <AlbumListRow key={a.id} album={a} onClick={() => navigate(`/album/${String(a.id).replace("deezer-", "")}`)} />
+          ))}
+        </SongListColumn>
+      ));
     }
     if (data.playlists?.length) {
       return data.playlists.slice(0, 20).map((p) => (

@@ -14,6 +14,7 @@ import { SyncedVideoPanel } from "@/components/nowplaying/SyncedVideoPanel";
 import { lookupMeta, peekMeta, type DeezerMeta } from "@/services/metadataEnrichment";
 
 import { toTitleCase } from "@/utils/toTitleCase";
+import { getDominantColor, gradientFromRGB } from "@/utils/dominantColor";
 
 /** Progress ring geometry (viewBox is 100x100). */
 const RING_R = 47;
@@ -62,6 +63,17 @@ export default function NowPlaying() {
     album: meta?.album || currentTrack?.album || "",
     artwork: meta?.artwork || currentTrack?.artwork || "",
   }), [meta, currentTrack]);
+
+  // Plain colour backdrop derived from the cover — no artwork image behind the page.
+  const [bgColor, setBgColor] = useState("linear-gradient(180deg, #2a2030 0%, #14121a 45%, #0a0a0a 100%)");
+  useEffect(() => {
+    let alive = true;
+    const art = display.artwork;
+    if (!art) return;
+    getDominantColor(art).then((c) => { if (alive) setBgColor(gradientFromRGB(c)); }).catch(() => undefined);
+    return () => { alive = false; };
+  }, [display.artwork]);
+
 
 
   useEffect(() => {
@@ -127,22 +139,15 @@ export default function NowPlaying() {
     <motion.main initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-20 flex h-[100dvh] flex-col overflow-hidden overscroll-none bg-background text-foreground">
       <AnimatePresence mode="wait">
         <motion.div
-          key={currentTrack.artwork}
+          key={bgColor}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.8 }}
           className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage: `url(${display.artwork || currentTrack.artwork})`,
-            backgroundSize: "contain",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-            filter: "saturate(115%) brightness(0.5)",
-          }}
+          style={{ background: bgColor }}
         />
       </AnimatePresence>
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,hsl(0_0%_0%/0.35)_0%,hsl(0_0%_0%/0.6)_55%,hsl(0_0%_0%/0.88)_100%)]" />
 
       {/* Top bar — centred title + artist */}
       <header className="relative z-10 flex shrink-0 items-center justify-between gap-2 px-4 pt-[calc(0.75rem+env(safe-area-inset-top))]">

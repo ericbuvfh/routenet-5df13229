@@ -334,10 +334,18 @@ export default function Search() {
     return true;
   });
 
+  // Albums: collapse re-issues / editions of the same record by the same artist
+  // so a query never returns the same album five times.
+  const albumBaseKey = (title: string) =>
+    normKey(
+      (title || "")
+        .replace(/\((?:[^)]*)\)|\[[^\]]*\]/g, " ")
+        .replace(/\b(deluxe|expanded|remaster(?:ed)?|edition|version|anniversary|reissue|bonus|explicit|clean|live|instrumental)\b.*$/i, " "),
+    );
   const seenAlbumKeys = new Set<string>();
   const dedupedAlbums = filteredAlbums.filter((a) => {
-    const k = `${normKey(a.title)}::${normKey(a.artist)}`;
-    if (!k.trim() || seenAlbumKeys.has(k)) return false;
+    const k = `${albumBaseKey(a.title)}::${normKey(a.artist)}`;
+    if (!k.replace("::", "").trim() || seenAlbumKeys.has(k)) return false;
     seenAlbumKeys.add(k);
     return true;
   });
@@ -345,7 +353,13 @@ export default function Search() {
   const topItems = [
     ...dedupedTracks.map(t => ({ type: 'track' as const, score: scoreMatch(debouncedQuery, t), item: t })),
     ...dedupedAlbums.map(a => ({ type: 'album' as const, score: scoreMatch(debouncedQuery, { title: a.title, artist: a.artist }), item: a })),
-    ...matchingPlaylists.map(p => ({ type: 'playlist' as const, score: scoreMatch(debouncedQuery, { title: p.name }), item: p })),
+    // Playlists are ranked on their own score: name match plus size, so the
+    // fullest, most relevant playlists surface above thin ones.
+    ...matchingPlaylists.map(p => ({
+      type: 'playlist' as const,
+      score: scoreMatch(debouncedQuery, { title: p.name }) + Math.min(30, Number((p as any).track_count ?? 0) * 2),
+      item: p,
+    })),
   ].sort((a, b) => b.score - a.score);
 
   const topResult = topItems[0];
