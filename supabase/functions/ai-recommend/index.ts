@@ -117,7 +117,16 @@ Return a JSON object: { "tracks": [{ "title": string, "artist": string, "role": 
     let parsed: any = {};
     let provider = "lovable";
     try {
-      const res = await chatJson<any>({ system, user, json: true, temperature: 0.9 });
+      const res = await chatJson<any>({
+        system,
+        user,
+        json: true,
+        temperature: 0.9,
+        // OpenRouter first with a fast model; the other providers stay as fallbacks.
+        prefer: "openrouter",
+        openRouterModel: "google/gemini-2.5-flash",
+        maxOutputTokens: 4000,
+      });
       parsed = res.data ?? {};
       provider = res.provider;
     } catch (e) {

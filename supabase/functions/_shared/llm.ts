@@ -138,11 +138,17 @@ async function callOpenRouter(o: ChatOptions): Promise<string | null> {
  * completion. Throws `LlmUnavailableError` when every provider failed.
  */
 export async function chatComplete(o: ChatOptions): Promise<ChatResult> {
-  const providers: Array<[ChatResult["provider"], (x: ChatOptions) => Promise<string | null>]> = [
+  let providers: Array<[ChatResult["provider"], (x: ChatOptions) => Promise<string | null>]> = [
     ["lovable", callLovable],
     ["gemini", callGemini],
     ["openrouter", callOpenRouter],
   ];
+  if (o.prefer) {
+    providers = [
+      ...providers.filter(([n]) => n === o.prefer),
+      ...providers.filter(([n]) => n !== o.prefer),
+    ];
+  }
 
   const errors: string[] = [];
   let sawQuota = false;
