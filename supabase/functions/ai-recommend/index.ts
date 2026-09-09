@@ -52,12 +52,16 @@ Return exactly ${count} real, existing songs as JSON. Each item MUST have:
   "reason" – max 12 words
 
 Role distribution (approximate, across the whole list):
-  fanfav 30% (deep fan favourites and signature album songs, NOT the artist's single biggest hit)
+  recent 32% (new releases from the last 12-18 months — latest drops matter)
   related 25% (same sound / mood / BPM / production as the seed and taste)
-  recent 20% (new releases from the last 12-18 months)
+  fanfav 23% (deep fan favourites and signature album songs, NOT the artist's single biggest hit)
   classic 15% (older album classics and essentials that still fit)
-  hidden 10% (lesser-known gems that fit the taste)
+  hidden 5% MAXIMUM (niche / lesser-known artists — keep this small)
   trending: use sparingly — at most 3 songs total
+
+ARTIST FAME BALANCE (critical):
+- About 70% of the list must be well-known, established (mainstream) artists in the listener's taste space.
+- No more than 5% of the list may be niche / obscure / very small artists.
 
 HOW TO USE THE LISTENER'S LIBRARY (critical):
 - The LIKED SONGS, SAVED ALBUMS, PLAYLIST SONGS and RECENTLY PLAYED lists are a TASTE PROFILE ONLY. They tell you the listener's genres, eras, languages, moods, energy and production styles.

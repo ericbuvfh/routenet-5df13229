@@ -22,6 +22,8 @@ export interface ChatOptions {
   geminiModel?: string;
   /** Preferred OpenRouter model. */
   openRouterModel?: string;
+  /** Provider tried first; the others stay as fallbacks. */
+  prefer?: "lovable" | "gemini" | "openrouter";
 }
 
 export interface ChatResult {
