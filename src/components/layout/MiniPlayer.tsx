@@ -53,8 +53,8 @@ export function MiniPlayer() {
           </div>
 
           <div className="min-w-0 flex-1 pr-1">
-            <p className="truncate text-[12px] font-semibold leading-tight text-foreground">{title}</p>
-            <p className="mt-1 truncate text-[10px] leading-tight text-muted-foreground">
+            <p className="truncate text-[11px] font-semibold leading-tight text-foreground">{title}</p>
+            <p className="mt-0.5 truncate text-[9px] leading-tight text-muted-foreground">
               {isResolving ? "Loading" : subtitle}
             </p>
           </div>
