@@ -350,9 +350,15 @@ export default function Search() {
     return true;
   });
 
+  // Hierarchy: songs first, then playlists, then albums. Albums are the least
+  // useful result type here, so they rank last and are capped.
+  const TYPE_RANK = { track: 3, playlist: 2, album: 1 } as const;
+
   const topItems = [
     ...dedupedTracks.map(t => ({ type: 'track' as const, score: scoreMatch(debouncedQuery, t), item: t })),
-    ...dedupedAlbums.map(a => ({ type: 'album' as const, score: scoreMatch(debouncedQuery, { title: a.title, artist: a.artist }), item: a })),
+    ...dedupedAlbums
+      .slice(0, 6)
+      .map(a => ({ type: 'album' as const, score: scoreMatch(debouncedQuery, { title: a.title, artist: a.artist }), item: a })),
     // Playlists are ranked on their own score: name match plus size, so the
     // fullest, most relevant playlists surface above thin ones.
     ...matchingPlaylists.map(p => ({
@@ -360,18 +366,26 @@ export default function Search() {
       score: scoreMatch(debouncedQuery, { title: p.name }) + Math.min(30, Number((p as any).track_count ?? 0) * 2),
       item: p,
     })),
-  ].sort((a, b) => b.score - a.score);
+  ].sort((a, b) =>
+    TYPE_RANK[b.type] - TYPE_RANK[a.type] || b.score - a.score,
+  );
 
   const topResult = topItems[0];
 
   // One flat result list — no per-type sections, just filtered by the pills.
-  const visibleItems = topItems.filter((e) =>
-    activeFilter === 'all' ? true
-    : activeFilter === 'tracks' ? e.type === 'track'
-    : activeFilter === 'albums' ? e.type === 'album'
-    : activeFilter === 'playlists' ? e.type === 'playlist'
-    : false,
-  );
+  // In the "All" tab only a few albums are shown so they never flood the list.
+  let albumsShown = 0;
+  const visibleItems = topItems.filter((e) => {
+    if (activeFilter === 'tracks') return e.type === 'track';
+    if (activeFilter === 'albums') return e.type === 'album';
+    if (activeFilter === 'playlists') return e.type === 'playlist';
+    if (activeFilter !== 'all') return false;
+    if (e.type === 'album') {
+      albumsShown += 1;
+      return albumsShown <= 3;
+    }
+    return true;
+  });
 
 
 
