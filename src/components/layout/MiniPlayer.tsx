@@ -7,10 +7,17 @@ import { getCachedYouTubeId } from "@/components/player/GlobalAudioPlayer";
 export function MiniPlayer() {
   const {
     currentTrack, currentVideo, isPlaying, togglePlay,
-    next, previous, progress, isVideoMode,
+    next, previous, progress, isVideoMode, seek,
     shuffle, toggleShuffle, repeat, toggleRepeat,
   } = usePlayer();
   const navigate = useNavigate();
+
+  const handleSeek = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    seek(ratio);
+  };
 
   const displayItem = isVideoMode ? currentVideo : currentTrack;
   if (!displayItem) return null;
