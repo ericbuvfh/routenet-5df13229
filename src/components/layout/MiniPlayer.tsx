@@ -39,10 +39,20 @@ export function MiniPlayer() {
         className="fixed bottom-14 left-0 right-0 z-40 px-2 pb-1"
       >
         <div onClick={handleClick} className="relative mx-auto flex min-h-[58px] max-w-xl cursor-pointer items-center gap-2 overflow-hidden rounded-xl bg-popover px-2 pb-1.5 pt-2.5 shadow-elevated">
-          <div className="absolute inset-x-2.5 top-1 h-[2px] overflow-visible rounded-full bg-muted">
-            <motion.div className="relative h-full rounded-full bg-foreground" style={{ width: `${progress * 100}%` }}>
-              <span className="absolute -right-1 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-foreground shadow-card" />
-            </motion.div>
+          <div
+            className="absolute inset-x-2.5 top-0 flex h-3 cursor-pointer items-center"
+            onPointerDown={handleSeek}
+            role="slider"
+            aria-label="Seek"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(progress * 100)}
+          >
+            <div className="h-[2px] w-full overflow-visible rounded-full bg-muted">
+              <motion.div className="relative h-full rounded-full bg-foreground" style={{ width: `${progress * 100}%` }}>
+                <span className="absolute -right-1 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-foreground shadow-card" />
+              </motion.div>
+            </div>
           </div>
 
           <div className="relative h-9 w-9 flex-shrink-0 overflow-hidden rounded-[4px] bg-secondary">
