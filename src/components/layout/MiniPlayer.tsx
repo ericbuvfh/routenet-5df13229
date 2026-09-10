@@ -31,14 +31,14 @@ export function MiniPlayer() {
         exit={{ y: 60, opacity: 0 }}
         className="fixed bottom-14 left-0 right-0 z-40 px-2 pb-1"
       >
-        <div onClick={handleClick} className="relative mx-auto flex min-h-[72px] max-w-xl cursor-pointer items-center gap-2 overflow-hidden rounded-2xl bg-popover px-2.5 pb-2 pt-3 shadow-elevated">
-          <div className="absolute inset-x-3 top-1.5 h-[3px] overflow-visible rounded-full bg-muted">
+        <div onClick={handleClick} className="relative mx-auto flex min-h-[58px] max-w-xl cursor-pointer items-center gap-2 overflow-hidden rounded-xl bg-popover px-2 pb-1.5 pt-2.5 shadow-elevated">
+          <div className="absolute inset-x-2.5 top-1 h-[2px] overflow-visible rounded-full bg-muted">
             <motion.div className="relative h-full rounded-full bg-foreground" style={{ width: `${progress * 100}%` }}>
-              <span className="absolute -right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-foreground shadow-card" />
+              <span className="absolute -right-1 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-foreground shadow-card" />
             </motion.div>
           </div>
 
-          <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-[5px] bg-secondary">
+          <div className="relative h-9 w-9 flex-shrink-0 overflow-hidden rounded-[4px] bg-secondary">
             <img src={artwork} alt={title} className="h-full w-full object-cover" loading="eager" />
             {isResolving && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/40">
@@ -53,8 +53,8 @@ export function MiniPlayer() {
           </div>
 
           <div className="min-w-0 flex-1 pr-1">
-            <p className="truncate text-[12px] font-semibold leading-tight text-foreground">{title}</p>
-            <p className="mt-1 truncate text-[10px] leading-tight text-muted-foreground">
+            <p className="truncate text-[11px] font-semibold leading-tight text-foreground">{title}</p>
+            <p className="mt-0.5 truncate text-[9px] leading-tight text-muted-foreground">
               {isResolving ? "Loading" : subtitle}
             </p>
           </div>

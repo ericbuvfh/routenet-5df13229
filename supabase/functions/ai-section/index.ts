@@ -128,8 +128,14 @@ Return ${count} ${itemKind}. Mix popular hits with some discoveries. If the rule
     let tracks: { title: string; artist: string; reason?: string }[] = [];
     let provider = "none";
 
-    // 1) Lovable AI Gateway (tool calling)
-    if (apiKey) {
+    // 1) OpenRouter (primary engine)
+    {
+      const text = await callViaOpenRouter(systemPrompt, prompt);
+      if (text) { tracks = extractTracks(text); if (tracks.length > 0) provider = "openrouter"; }
+    }
+
+    // 2) Lovable AI Gateway (tool calling)
+    if (tracks.length === 0 && apiKey) {
       try {
         const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",

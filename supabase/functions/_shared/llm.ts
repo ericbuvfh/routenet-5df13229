@@ -45,6 +45,8 @@ const DEFAULTS = {
   gatewayModel: "google/gemini-3.6-flash",
   geminiModel: "gemini-3.6-flash",
   openRouterModel: "google/gemini-2.5-flash",
+  /** Lighter, faster route used for the retry attempt. */
+  openRouterFastModel: "google/gemini-2.5-flash-lite",
 };
 
 async function callLovable(o: ChatOptions): Promise<string | null> {
@@ -101,11 +103,12 @@ async function callGemini(o: ChatOptions): Promise<string | null> {
   return text || null;
 }
 
-async function callOpenRouter(o: ChatOptions): Promise<string | null> {
+async function openRouterOnce(o: ChatOptions, model: string, timeoutMs: number): Promise<string | null> {
   const key = Deno.env.get("OPENROUTER_API_KEY");
   if (!key) return null;
   const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
+    signal: AbortSignal.timeout(timeoutMs),
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${key}`,
@@ -113,7 +116,7 @@ async function callOpenRouter(o: ChatOptions): Promise<string | null> {
       "X-Title": "RouteNet Music",
     },
     body: JSON.stringify({
-      model: o.openRouterModel || DEFAULTS.openRouterModel,
+      model,
       messages: [
         { role: "system", content: o.system },
         { role: "user", content: o.user },
@@ -134,14 +137,40 @@ async function callOpenRouter(o: ChatOptions): Promise<string | null> {
 }
 
 /**
+ * OpenRouter is the primary provider. It gets a bounded timeout plus one retry
+ * on a lighter, faster model so a slow or hiccuping route never stalls the app.
+ */
+async function callOpenRouter(o: ChatOptions): Promise<string | null> {
+  const primary = o.openRouterModel || DEFAULTS.openRouterModel;
+  const attempts: Array<[string, number]> = [
+    [primary, 25000],
+    [DEFAULTS.openRouterFastModel, 20000],
+  ];
+  let lastErr: unknown = null;
+  for (const [model, timeoutMs] of attempts) {
+    try {
+      const text = await openRouterOnce(o, model, timeoutMs);
+      if (text === null) return null; // not configured
+      if (text.trim()) return text;
+    } catch (e) {
+      lastErr = e;
+      console.error(`[llm] openrouter ${model} failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+  if (lastErr) throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+  return null;
+}
+
+/**
  * Runs the prompt through the provider chain and returns the first non-empty
  * completion. Throws `LlmUnavailableError` when every provider failed.
  */
 export async function chatComplete(o: ChatOptions): Promise<ChatResult> {
   let providers: Array<[ChatResult["provider"], (x: ChatOptions) => Promise<string | null>]> = [
+    // OpenRouter is the primary engine; the others are pure fallbacks.
+    ["openrouter", callOpenRouter],
     ["lovable", callLovable],
     ["gemini", callGemini],
-    ["openrouter", callOpenRouter],
   ];
   if (o.prefer) {
     providers = [
