@@ -167,9 +167,10 @@ async function callOpenRouter(o: ChatOptions): Promise<string | null> {
  */
 export async function chatComplete(o: ChatOptions): Promise<ChatResult> {
   let providers: Array<[ChatResult["provider"], (x: ChatOptions) => Promise<string | null>]> = [
+    // OpenRouter is the primary engine; the others are pure fallbacks.
+    ["openrouter", callOpenRouter],
     ["lovable", callLovable],
     ["gemini", callGemini],
-    ["openrouter", callOpenRouter],
   ];
   if (o.prefer) {
     providers = [
