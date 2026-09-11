@@ -2,7 +2,7 @@ import { Play, Pause, SkipForward, SkipBack, Shuffle, Repeat, Repeat1, Video, Lo
 import { motion, AnimatePresence } from "framer-motion";
 import { usePlayer } from "@/context/PlayerContext";
 import { useNavigate } from "react-router-dom";
-import { getCachedYouTubeId } from "@/components/player/GlobalAudioPlayer";
+import { getCachedYouTubeId, seekGlobalAudio } from "@/components/player/GlobalAudioPlayer";
 
 export function MiniPlayer() {
   const {
