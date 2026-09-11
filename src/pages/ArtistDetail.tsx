@@ -192,16 +192,55 @@ const ArtistDetail = () => {
         )}
       </motion.section>
 
-      {albums.length > 0 && (
-        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="px-4 mb-8">
-          <h2 className="text-xl font-bold mb-4">Discography</h2>
+      {[
+        { key: "albums", title: "Albums", items: albums },
+        { key: "eps", title: "EPs & Singles", items: eps },
+      ].map((group) => group.items.length > 0 && (
+        <motion.section key={group.key} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="px-4 mb-8">
+          <h2 className="text-xl font-bold mb-4">{group.title}</h2>
           <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
-            {albums.map((album) => (
-              <motion.div key={album.id} whileTap={{ scale: 0.98 }} onClick={() => navigate(`/album/${album.id}`)} className="flex-shrink-0 w-40 cursor-pointer">
-                <img src={album.artwork} alt={album.name} className="w-40 h-40 rounded-md object-cover" onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_ART; }} />
-                <h3 className="font-semibold mt-2 truncate">{toTitleCase(album.name)}</h3>
-                <p className="text-sm text-muted-foreground">{album.year} · {toTitleCase(album.type)}</p>
+            {group.items.map((album: any) => (
+              <motion.div key={album.id} whileTap={{ scale: 0.98 }} onClick={() => navigate(`/album/${album.id}`)} className="flex-shrink-0 w-36 cursor-pointer">
+                <img src={album.artwork} alt={album.name} className="w-36 h-36 rounded-md object-cover" onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_ART; }} />
+                <h3 className="font-semibold mt-2 truncate text-[14px]">{toTitleCase(album.name)}</h3>
+                <p className="text-[12px] text-muted-foreground">{album.year} · {toTitleCase(album.type)}</p>
               </motion.div>
+            ))}
+          </div>
+        </motion.section>
+      ))}
+
+      {(musicVideos?.length || 0) > 0 && (
+        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }} className="px-4 mb-8">
+          <h2 className="text-xl font-bold mb-4">Music videos</h2>
+          <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
+            {musicVideos!.map((v) => (
+              <motion.div
+                key={v.id}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => playVideo({ id: v.id, title: v.title, artist: artist?.name || artistName, youtubeId: v.id, thumbnail: v.thumb })}
+                className="flex-shrink-0 w-56 cursor-pointer"
+              >
+                <div className="relative aspect-video w-56 overflow-hidden rounded-md bg-muted/30">
+                  <img src={v.thumb} alt={v.title} className="h-full w-full object-cover" />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+                    <Play className="h-8 w-8 text-white" fill="currentColor" />
+                  </div>
+                </div>
+                <h3 className="mt-2 line-clamp-2 text-[14px] font-semibold leading-tight">{v.title}</h3>
+                <p className="text-[12px] text-muted-foreground">{v.channel}</p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.section>
+      )}
+
+      {collabs.length > 0 && (
+        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.48 }} className="px-4 mb-8">
+          <h2 className="text-xl font-bold mb-4">Collaborations</h2>
+          <div className="space-y-1">
+            {collabs.slice(0, 8).map((track, index) => (
+              <TrackCard key={`collab-${track.id}`} track={track} index={index} contextTracks={collabs} hideStreams />
             ))}
           </div>
         </motion.section>
