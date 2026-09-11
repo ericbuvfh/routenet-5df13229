@@ -7,16 +7,30 @@ import { getCachedYouTubeId, seekGlobalAudio } from "@/components/player/GlobalA
 export function MiniPlayer() {
   const {
     currentTrack, currentVideo, isPlaying, togglePlay,
-    next, previous, progress, isVideoMode, seek,
+    next, previous, progress, duration, isVideoMode, seek,
     shuffle, toggleShuffle, repeat, toggleRepeat,
   } = usePlayer();
   const navigate = useNavigate();
 
+  // Move both the UI progress and the actual audio/video element.
+  const applySeek = (clientX: number, el: HTMLElement) => {
+    const rect = el.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    seek(ratio);
+    if (duration > 0) seekGlobalAudio(ratio * duration);
+  };
+
   const handleSeek = (e: React.PointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
-    const rect = e.currentTarget.getBoundingClientRect();
-    const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-    seek(ratio);
+    const el = e.currentTarget;
+    applySeek(e.clientX, el);
+    const move = (ev: PointerEvent) => applySeek(ev.clientX, el);
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
   };
 
   const displayItem = isVideoMode ? currentVideo : currentTrack;
