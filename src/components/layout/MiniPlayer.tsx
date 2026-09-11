@@ -107,13 +107,13 @@ export function MiniPlayer() {
             )}
             <motion.button whileTap={{ scale: 0.9 }} onClick={togglePlay}
               aria-label={isPlaying ? "Pause" : "Play"}
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-foreground text-background shadow-card">
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-background shadow-card">
               {isResolving ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : isPlaying ? (
-                <Pause className="h-5 w-5" fill="currentColor" />
+                <Pause className="h-4 w-4" fill="currentColor" />
               ) : (
-                <Play className="ml-0.5 h-5 w-5" fill="currentColor" />
+                <Play className="ml-0.5 h-4 w-4" fill="currentColor" />
               )}
             </motion.button>
             {!isVideoMode && (
