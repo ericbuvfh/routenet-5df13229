@@ -8,6 +8,8 @@ import { usePlayer } from "@/context/PlayerContext";
 import { TrackCard } from "@/components/cards/TrackCard";
 import { useState, useEffect } from "react";
 import { useDeezerArtist, useArtistDetails } from "@/hooks/useMusicSearch";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { usePreloadYouTube } from "@/hooks/usePreloadYouTube";
 import { toggleLikedArtist, getLikedArtists } from "@/pages/Library";
 import { toast } from "sonner";
