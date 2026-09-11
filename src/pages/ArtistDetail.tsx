@@ -62,19 +62,51 @@ const ArtistDetail = () => {
 
   usePreloadYouTube(displayedTracks, displayedTracks.length > 0);
 
-  const deezerAlbums = (deezerData?.albums || []).slice(0, 6).map((a: any, i: number) => ({
+  const deezerAlbums = (deezerData?.albums || []).map((a: any, i: number) => ({
     id: a.id.toString(), name: a.title,
     artwork: a.cover_medium || a.cover || PLACEHOLDER_ART,
     year: a.release_date?.split('-')[0] || (2024 - i).toString(),
     type: a.record_type === 'album' ? 'album' : a.record_type === 'single' ? 'single' : 'ep',
+    tracks: Number(a.nb_tracks || 0),
   }));
 
-  const apiAlbums = apiData?.albums?.slice(0, 4).map((a, i) => ({
+  const apiAlbums = apiData?.albums?.slice(0, 6).map((a, i) => ({
     id: a.id, name: a.name, artwork: a.artwork || PLACEHOLDER_ART,
-    year: a.year || (2024 - i).toString(), type: i === 0 ? "album" : i === 1 ? "single" : "ep",
+    year: a.year || (2024 - i).toString(), type: i === 0 ? "album" : "ep", tracks: 0,
   })) || [];
 
-  const albums = deezerAlbums.length > 0 ? deezerAlbums : apiAlbums;
+  const releases = deezerAlbums.length > 0 ? deezerAlbums : apiAlbums;
+  // Full-length records vs shorter EPs / singles.
+  const albums = releases.filter((r: any) => r.type === 'album' && (r.tracks === 0 || r.tracks >= 7));
+  const eps = releases.filter((r: any) => !albums.includes(r));
+
+  // Collaborations: top songs credited with another artist.
+  const collabs = allTracks.filter((t: any) =>
+    /\b(feat\.?|ft\.?|with|&|x)\b/i.test(t.title) ||
+    (t.artist || "").toLowerCase() !== (artist?.name || artistName).toLowerCase(),
+  );
+
+  // Official music videos from the artist's channel.
+  const { data: musicVideos } = useQuery({
+    queryKey: ["artist-videos", artist?.name],
+    enabled: !!artist?.name,
+    staleTime: 30 * 60 * 1000,
+    queryFn: async () => {
+      const { data } = await supabase.functions.invoke("youtube", {
+        body: { action: "search", params: { query: `${artist?.name} official music video`, maxResults: 10 } },
+      });
+      const items: any[] = data?.items || [];
+      return items
+        .map((it) => ({
+          id: typeof it.id === "string" ? it.id : it.id?.videoId,
+          title: it?.snippet?.title || "",
+          channel: it?.snippet?.channelTitle || "",
+          thumb: it?.snippet?.thumbnails?.medium?.url || it?.snippet?.thumbnails?.default?.url || PLACEHOLDER_ART,
+        }))
+        .filter((v) => v.id && !/karaoke|cover|reaction|lyrics/i.test(v.title))
+        .slice(0, 8);
+    },
+  });
 
   const similarArtists: Artist[] = apiData?.similar?.map((s) => ({
     id: s.id, name: s.name, avatar: s.avatar || PLACEHOLDER_ART, monthlyListeners: s.monthlyListeners || 0,
