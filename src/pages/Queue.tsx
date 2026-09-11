@@ -70,6 +70,16 @@ export default function Queue() {
       </motion.header>
 
       <div className="px-4">
+        {queue.length > 0 && (
+          <button
+            onClick={saveQueueAsPlaylist}
+            disabled={saving}
+            className="mb-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-3 text-[14px] font-bold text-primary-foreground disabled:opacity-60"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ListPlus className="h-4 w-4" />}
+            Save as playlist
+          </button>
+        )}
         {/* Now Playing */}
         {currentTrack && (
           <section className="mb-4">
