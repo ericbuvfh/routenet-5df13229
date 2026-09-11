@@ -8,6 +8,8 @@ import { usePlayer } from "@/context/PlayerContext";
 import { TrackCard } from "@/components/cards/TrackCard";
 import { useState, useEffect } from "react";
 import { useDeezerArtist, useArtistDetails } from "@/hooks/useMusicSearch";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { usePreloadYouTube } from "@/hooks/usePreloadYouTube";
 import { toggleLikedArtist, getLikedArtists } from "@/pages/Library";
 import { toast } from "sonner";
@@ -62,19 +64,51 @@ const ArtistDetail = () => {
 
   usePreloadYouTube(displayedTracks, displayedTracks.length > 0);
 
-  const deezerAlbums = (deezerData?.albums || []).slice(0, 6).map((a: any, i: number) => ({
+  const deezerAlbums = (deezerData?.albums || []).map((a: any, i: number) => ({
     id: a.id.toString(), name: a.title,
     artwork: a.cover_medium || a.cover || PLACEHOLDER_ART,
     year: a.release_date?.split('-')[0] || (2024 - i).toString(),
     type: a.record_type === 'album' ? 'album' : a.record_type === 'single' ? 'single' : 'ep',
+    tracks: Number(a.nb_tracks || 0),
   }));
 
-  const apiAlbums = apiData?.albums?.slice(0, 4).map((a, i) => ({
+  const apiAlbums = apiData?.albums?.slice(0, 6).map((a, i) => ({
     id: a.id, name: a.name, artwork: a.artwork || PLACEHOLDER_ART,
-    year: a.year || (2024 - i).toString(), type: i === 0 ? "album" : i === 1 ? "single" : "ep",
+    year: a.year || (2024 - i).toString(), type: i === 0 ? "album" : "ep", tracks: 0,
   })) || [];
 
-  const albums = deezerAlbums.length > 0 ? deezerAlbums : apiAlbums;
+  const releases = deezerAlbums.length > 0 ? deezerAlbums : apiAlbums;
+  // Full-length records vs shorter EPs / singles.
+  const albums = releases.filter((r: any) => r.type === 'album' && (r.tracks === 0 || r.tracks >= 7));
+  const eps = releases.filter((r: any) => !albums.includes(r));
+
+  // Collaborations: top songs credited with another artist.
+  const collabs = allTracks.filter((t: any) =>
+    /\b(feat\.?|ft\.?|with|&|x)\b/i.test(t.title) ||
+    (t.artist || "").toLowerCase() !== (artist?.name || artistName).toLowerCase(),
+  );
+
+  // Official music videos from the artist's channel.
+  const { data: musicVideos } = useQuery({
+    queryKey: ["artist-videos", artist?.name],
+    enabled: !!artist?.name,
+    staleTime: 30 * 60 * 1000,
+    queryFn: async () => {
+      const { data } = await supabase.functions.invoke("youtube", {
+        body: { action: "search", params: { query: `${artist?.name} official music video`, maxResults: 10 } },
+      });
+      const items: any[] = data?.items || [];
+      return items
+        .map((it) => ({
+          id: typeof it.id === "string" ? it.id : it.id?.videoId,
+          title: it?.snippet?.title || "",
+          channel: it?.snippet?.channelTitle || "",
+          thumb: it?.snippet?.thumbnails?.medium?.url || it?.snippet?.thumbnails?.default?.url || PLACEHOLDER_ART,
+        }))
+        .filter((v) => v.id && !/karaoke|cover|reaction|lyrics/i.test(v.title))
+        .slice(0, 8);
+    },
+  });
 
   const similarArtists: Artist[] = apiData?.similar?.map((s) => ({
     id: s.id, name: s.name, avatar: s.avatar || PLACEHOLDER_ART, monthlyListeners: s.monthlyListeners || 0,
@@ -158,16 +192,55 @@ const ArtistDetail = () => {
         )}
       </motion.section>
 
-      {albums.length > 0 && (
-        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="px-4 mb-8">
-          <h2 className="text-xl font-bold mb-4">Discography</h2>
+      {[
+        { key: "albums", title: "Albums", items: albums },
+        { key: "eps", title: "EPs & Singles", items: eps },
+      ].map((group) => group.items.length > 0 && (
+        <motion.section key={group.key} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="px-4 mb-8">
+          <h2 className="text-xl font-bold mb-4">{group.title}</h2>
           <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
-            {albums.map((album) => (
-              <motion.div key={album.id} whileTap={{ scale: 0.98 }} onClick={() => navigate(`/album/${album.id}`)} className="flex-shrink-0 w-40 cursor-pointer">
-                <img src={album.artwork} alt={album.name} className="w-40 h-40 rounded-md object-cover" onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_ART; }} />
-                <h3 className="font-semibold mt-2 truncate">{toTitleCase(album.name)}</h3>
-                <p className="text-sm text-muted-foreground">{album.year} · {toTitleCase(album.type)}</p>
+            {group.items.map((album: any) => (
+              <motion.div key={album.id} whileTap={{ scale: 0.98 }} onClick={() => navigate(`/album/${album.id}`)} className="flex-shrink-0 w-36 cursor-pointer">
+                <img src={album.artwork} alt={album.name} className="w-36 h-36 rounded-md object-cover" onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_ART; }} />
+                <h3 className="font-semibold mt-2 truncate text-[14px]">{toTitleCase(album.name)}</h3>
+                <p className="text-[12px] text-muted-foreground">{album.year} · {toTitleCase(album.type)}</p>
               </motion.div>
+            ))}
+          </div>
+        </motion.section>
+      ))}
+
+      {(musicVideos?.length || 0) > 0 && (
+        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }} className="px-4 mb-8">
+          <h2 className="text-xl font-bold mb-4">Music videos</h2>
+          <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
+            {musicVideos!.map((v) => (
+              <motion.div
+                key={v.id}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => playVideo({ id: v.id, title: v.title, artist: artist?.name || artistName, youtubeId: v.id, thumbnail: v.thumb })}
+                className="flex-shrink-0 w-56 cursor-pointer"
+              >
+                <div className="relative aspect-video w-56 overflow-hidden rounded-md bg-muted/30">
+                  <img src={v.thumb} alt={v.title} className="h-full w-full object-cover" />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+                    <Play className="h-8 w-8 text-white" fill="currentColor" />
+                  </div>
+                </div>
+                <h3 className="mt-2 line-clamp-2 text-[14px] font-semibold leading-tight">{v.title}</h3>
+                <p className="text-[12px] text-muted-foreground">{v.channel}</p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.section>
+      )}
+
+      {collabs.length > 0 && (
+        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.48 }} className="px-4 mb-8">
+          <h2 className="text-xl font-bold mb-4">Collaborations</h2>
+          <div className="space-y-1">
+            {collabs.slice(0, 8).map((track, index) => (
+              <TrackCard key={`collab-${track.id}`} track={track} index={index} contextTracks={collabs} hideStreams />
             ))}
           </div>
         </motion.section>
