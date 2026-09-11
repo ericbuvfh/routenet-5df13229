@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Play, X, Music2, Shuffle } from "lucide-react";
+import { ChevronLeft, Play, X, Music2, Shuffle, ListPlus, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { usePlayer } from "@/context/PlayerContext";
 import { formatDuration, Track } from "@/data/mockData";
+import { createPlaylist, addTracksToPlaylist } from "@/services/playlistService";
 
 export default function Queue() {
   const navigate = useNavigate();
   const { currentTrack, queue, setQueue, isPlaying, play, toggleShuffle, shuffle } = usePlayer();
+  const [saving, setSaving] = useState(false);
 
   const removeFromQueue = (trackId: string) => {
     setQueue(queue.filter((t) => t.id !== trackId));
@@ -17,6 +21,33 @@ export default function Queue() {
   const currentIndex = queue.findIndex((t) => t.id === currentTrack?.id);
   const upNext = queue.slice(currentIndex + 1);
   const played = currentIndex > 0 ? queue.slice(0, currentIndex) : [];
+
+  /** Save everything currently in the queue as a brand new playlist. */
+  const saveQueueAsPlaylist = async () => {
+    if (!queue.length || saving) return;
+    setSaving(true);
+    try {
+      const name = `Queue • ${new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
+      const playlist = await createPlaylist(name, `${queue.length} songs saved from your queue`);
+      if (!playlist) throw new Error("create failed");
+      const ok = await addTracksToPlaylist(
+        playlist.id,
+        queue.map((t) => ({
+          title: t.title,
+          artist: t.artist,
+          album: t.album,
+          artwork: t.artwork,
+          duration: t.duration,
+        })),
+      );
+      if (!ok) throw new Error("add failed");
+      toast.success(`Saved ${queue.length} songs as "${name}"`);
+    } catch {
+      toast.error("Could not save the queue as a playlist");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="custom-scrollbar min-h-screen overflow-y-auto pb-24">
