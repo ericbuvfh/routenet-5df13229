@@ -354,17 +354,6 @@ export default function Search() {
   // useful result type here, so they rank last and are capped.
   const TYPE_RANK = { track: 3, playlist: 2, album: 1 } as const;
 
-  /**
-   * An album only earns a spot in "All" when it is genuinely notable: a
-   * full-length record by an artist that also dominates the song results,
-   * and a strong name match. Everything else stays in the Albums tab.
-   */
-  const isFamousAlbum = (a: Album) => {
-    const rank = famousArtists.get((a.artist || "").toLowerCase());
-    const tracks = Number((a as any).trackCount || 0);
-    return rank !== undefined && rank < 5 && tracks >= 7 && albumFameScore(a, famousArtists) >= 90;
-  };
-
   const topItems = [
     ...dedupedTracks.map(t => ({ type: 'track' as const, score: scoreMatch(debouncedQuery, t), item: t })),
     ...dedupedAlbums
@@ -384,7 +373,7 @@ export default function Search() {
   const topResult = topItems[0];
 
   // One flat result list — no per-type sections, just filtered by the pills.
-  // In the "All" tab albums appear only when famous, and at most two.
+  // In the "All" tab only a few albums are shown so they never flood the list.
   let albumsShown = 0;
   const visibleItems = topItems.filter((e) => {
     if (activeFilter === 'tracks') return e.type === 'track';
@@ -392,9 +381,8 @@ export default function Search() {
     if (activeFilter === 'playlists') return e.type === 'playlist';
     if (activeFilter !== 'all') return false;
     if (e.type === 'album') {
-      if (!isFamousAlbum(e.item as Album)) return false;
       albumsShown += 1;
-      return albumsShown <= 2;
+      return albumsShown <= 3;
     }
     return true;
   });

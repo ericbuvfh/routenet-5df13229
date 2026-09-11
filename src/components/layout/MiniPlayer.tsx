@@ -2,35 +2,21 @@ import { Play, Pause, SkipForward, SkipBack, Shuffle, Repeat, Repeat1, Video, Lo
 import { motion, AnimatePresence } from "framer-motion";
 import { usePlayer } from "@/context/PlayerContext";
 import { useNavigate } from "react-router-dom";
-import { getCachedYouTubeId, seekGlobalAudio } from "@/components/player/GlobalAudioPlayer";
+import { getCachedYouTubeId } from "@/components/player/GlobalAudioPlayer";
 
 export function MiniPlayer() {
   const {
     currentTrack, currentVideo, isPlaying, togglePlay,
-    next, previous, progress, duration, isVideoMode, seek,
+    next, previous, progress, isVideoMode, seek,
     shuffle, toggleShuffle, repeat, toggleRepeat,
   } = usePlayer();
   const navigate = useNavigate();
 
-  // Move both the UI progress and the actual audio/video element.
-  const applySeek = (clientX: number, el: HTMLElement) => {
-    const rect = el.getBoundingClientRect();
-    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-    seek(ratio);
-    if (duration > 0) seekGlobalAudio(ratio * duration);
-  };
-
   const handleSeek = (e: React.PointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
-    const el = e.currentTarget;
-    applySeek(e.clientX, el);
-    const move = (ev: PointerEvent) => applySeek(ev.clientX, el);
-    const up = () => {
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", up);
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up);
+    const rect = e.currentTarget.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    seek(ratio);
   };
 
   const displayItem = isVideoMode ? currentVideo : currentTrack;
@@ -107,13 +93,13 @@ export function MiniPlayer() {
             )}
             <motion.button whileTap={{ scale: 0.9 }} onClick={togglePlay}
               aria-label={isPlaying ? "Pause" : "Play"}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-background shadow-card">
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-foreground text-background shadow-card">
               {isResolving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-5 w-5 animate-spin" />
               ) : isPlaying ? (
-                <Pause className="h-4 w-4" fill="currentColor" />
+                <Pause className="h-5 w-5" fill="currentColor" />
               ) : (
-                <Play className="ml-0.5 h-4 w-4" fill="currentColor" />
+                <Play className="ml-0.5 h-5 w-5" fill="currentColor" />
               )}
             </motion.button>
             {!isVideoMode && (
