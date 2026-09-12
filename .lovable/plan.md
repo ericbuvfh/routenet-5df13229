@@ -1,63 +1,61 @@
-# Music App: Downloads, Desktop UI, Unified Playlist Layout
+# Player, Artist, Search, Queue, Artwork and Notifications
 
-I extracted and read the uploaded `yt-dlp-get-pot` repo. Important finding: it is a **Python yt-dlp client-side plugin framework only** — it contains no token generator, and its README now marks it deprecated (yt-dlp has a built-in PO token framework). It cannot run in this app (Deno edge functions + browser). So instead of installing it, I ported the same idea that its provider plugins use (BotGuard PO tokens) to this stack, and I already proved it works end to end in the sandbox:
+## Goal
+Polish the main listening flows: a smaller Home player, a complete artist page, clearer Search filters and album quality, queue-to-playlist saving, dependable artwork, and top-positioned notifications.
 
-- Minted `visitorData` from `youtube.com/sw.js_data` — OK
-- Ran a BotGuard challenge and minted an integrity token — OK
-- Generated a real PO token (848 chars) — OK
-- InnerTube player call with PO token + `signatureTimestamp` returned `status: OK` with 26 formats
-- Direct audio stream fetch returned HTTP 206 with real bytes
+## Changes
 
-Key insight about the current 502s: the server IP is what YouTube blocks, not the request shape. So the token is minted **in the user's browser** (real DOM, real IP), and the media bytes are also fetched **from the browser**, with the edge function only used for URL resolution and as a proxy fallback.
+### Home player
+- Reduce the Home mini-player’s transport button sizes and spacing while keeping shuffle, previous, play/pause, next, repeat, and the seek bar easy to tap.
+- Keep the square artwork, title, artist, loading state, and active shuffle/repeat states visually balanced at phone widths.
+- Preserve the existing progress slider behavior and verify that pointer seeking changes real playback, not only the displayed progress.
 
-## Task 1 — PO token download engine (works without any cookie)
+### Reliable artwork
+- Add a reusable song-artwork component with this fallback order: supplied album artwork → YouTube thumbnail from the track’s `youtubeId` → cached YouTube lookup by song and artist → local placeholder.
+- Switch the Home mini-player, Search song rows, Queue rows, artist top songs/collaborations, and shared song cards to this component so broken or empty image URLs recover consistently.
+- Keep album artwork from its source, but use a graceful local placeholder if its URL fails.
 
-- `src/services/poTokenProvider.ts`: browser-side provider using `bgutils-js`. Mints `visitorData` + PO token, caches it in memory/localStorage with TTL, refreshes on expiry, exposes `getPoToken()`.
-- `supabase/functions/_shared/ytresolve.ts`: accept `poToken` + `visitorData` from the caller; add `signatureTimestamp` (scraped from `player_ias.vflset` base.js, cached) to the player payload; order clients `ANDROID_VR` → `IOS` → `TVHTML5` → `WEB`; return direct progressive/adaptive audio + video URLs. Keep `YT_COOKIE` as an optional extra, no longer required.
-- `supabase/functions/public-download/index.ts`: `?mode=resolve` returns stream URLs + headers to the browser; existing proxy mode stays as fallback with range support.
-- `src/services/downloadService.ts`: new flow — mint token → resolve → fetch bytes directly in the browser with ranged fetch and progress → on CORS/403 failure, retry through the edge proxy → on failure, next itag/client. Clear toasts, never a fatal runtime error.
+### Full artist page
+- Rebuild the artist view around the existing Deezer, Last.fm, TheAudioDB, and YouTube sources.
+- Keep the artist banner/profile identity, follow/like action, play and shuffle controls, fan count, genre, country, and biography.
+- Add distinct sections for:
+  - Top songs, using playable song rows.
+  - Albums, separated from singles/EPs and linked to album pages.
+  - EPs and singles.
+  - Collaborations, deduplicated and limited to tracks that include the artist.
+  - Music videos, using wide video rows/cards that open the video player.
+  - About the artist and similar artists.
+- Cache artist queries through the existing query cache and show compact loading/empty states without leaving blank sections.
 
-## Task 2 — Offline library
+### Search
+- Add an **Artists** filter pill. Artist results appear only when that filter is selected, keeping the default All list focused on songs and playlists.
+- Rank albums by mainstream signals already available in the result set: strong song-result artist rank, track count, and source popularity; reject tribute, karaoke, cover, and low-confidence albums.
+- Keep only a small number of qualifying albums in All, while the Albums filter can show the complete qualified set.
+- Preserve song-first, playlist-second ordering, result deduplication, query restoration, and playlist save controls.
 
-- Save downloaded audio blobs in IndexedDB (`downloads` store: id, title, artist, artwork, mime, size, blob) plus a metadata index.
-- Player resolves a local blob URL first when a track is downloaded, so playback works fully offline.
-- Downloads page/section lists saved songs with size, delete, and play; green check on downloaded rows in album/playlist lists.
+### Save queue as playlist
+- Add a **Save as playlist** action to Queue with a small naming dialog and sensible default name.
+- Save the full queue in its current order, including the current/played/up-next tracks without duplicates.
+- Support signed-in users through Supabase and guests through the existing local playlist storage.
+- Set the new playlist cover to the first queued song’s resolved artwork, then open the saved playlist after success.
+- Disable the action for an empty queue and show an inline saving state.
 
-## Task 3 — Homepage + player fixes
+### Notifications
+- Move both notification systems to the top center on phone and desktop.
+- Update entrance/exit motion so notifications slide from the top rather than the bottom.
+- Keep existing success, error, loading, and progress messages unchanged.
 
-- `QuickAccessGrid.tsx`: "Recently Listened" becomes exactly **8 cards, 2 across × 4 down**, filled from real listen history (padded with Deezer recommendations when history is short).
-- "Watch video" button on the player: opens the synced muted video panel over the audio track, seek-synced both ways, with a clean close control.
-- Keep empty rows hidden; all cards keep working Deezer artwork/metadata.
+## Technical details
+- Extend the current artist data hook instead of adding database tables. Deezer supplies releases/top tracks, existing metadata sources supply biography, and the YouTube edge function supplies music videos and artwork fallbacks.
+- Extend playlist creation so an initial cover can be persisted immediately, then bulk-insert queue tracks with existing row-level access rules.
+- No database migration is required because `playlists.cover_image` and playlist track artwork already exist.
+- Treat “filter out artist” as adding a dedicated Artists filter rather than injecting artist rows into All.
 
-## Task 4 — Full desktop layout (matches the uploaded screenshots)
-
-Responsive shell at `lg:` and up, mobile untouched:
-
-```text
-+----------+---------------------------------+------------+
-|  Sidebar |  Top bar: back/fwd, search      | Now Playing|
-|  Home    |---------------------------------|  artwork   |
-|  Search  |  Content (Good morning grid,    |  title     |
-|  Library |  album/playlist detail)         |  lyrics    |
-|  ...     |                                 |  queue     |
-+----------+---------------------------------+------------+
-|            Bottom playback bar (full width)             |
-+--------------------------------------------------------+
-```
-
-- `AppLayout.tsx`: three-pane grid on desktop; `BottomNav` + `MiniPlayer` on mobile only.
-- New `DesktopSidebar` (nav + "Your Library" list), `DesktopTopBar` (nav arrows, home, "What do you want to play?" search, profile), `DesktopNowPlayingPanel`, `DesktopPlayerBar` (progress, volume, shuffle/repeat, queue/lyrics/video toggles).
-- Home on desktop: greeting grid + wide card rows as in the screenshot.
-- Album/playlist detail on desktop: gradient hero, large art, Play + Download + more, and a **table tracklist** (#, title with thumbnail, album, date added, duration).
-
-## Task 5 — One playlist layout everywhere + spacing fix
-
-- Make `AlbumDetail`'s layout the single shared detail layout (`src/components/detail/DetailPage.tsx`) and rewrite `PlaylistDetail.tsx`, `UserPlaylistDetail.tsx`, `LikedSongs.tsx`, and `RecentlyPlayed.tsx` on top of it, so every playlist in the app (including from Library, Search, Discover, Radio) uses the album design.
-- Library playlist rows/cards restyled to match.
-- Remove the dead space under the album/playlist tracklist (bottom padding now exactly clears the player bar, nothing more).
-
-## Technical notes
-
-- New dependency: `bgutils-js` (browser only, ~small, MIT).
-- No Python and no yt-dlp involved; nothing to install on the user's machine.
-- Verification: real download of a track in a headless browser, byte count + IndexedDB entry checked, plus desktop and mobile screenshots of home, album, and playlist pages.
+## Verification
+- Run the project’s checks.
+- Test Home seeking and transport controls at phone and desktop sizes.
+- Test an artist with albums, singles/EPs, collaborations, videos, and biography; confirm empty sections stay hidden.
+- Search for a song, artist, playlist, famous album, and obscure album; verify ordering, filtering, deduplication, and album suppression.
+- Force broken artwork URLs and confirm YouTube/local fallbacks display.
+- Save a queue as both a guest and signed-in user; confirm order, tracks, and first-song playlist cover.
+- Trigger success, error, and loading notifications and confirm all appear from the top.
