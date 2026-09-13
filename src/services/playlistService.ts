@@ -73,7 +73,7 @@ export async function getUserPlaylists(): Promise<PlaylistRow[]> {
   return (data ?? []) as PlaylistRow[];
 }
 
-export async function createPlaylist(name: string, description?: string, isPublic = true): Promise<PlaylistRow | null> {
+export async function createPlaylist(name: string, description?: string, isPublic = true, coverImage?: string): Promise<PlaylistRow | null> {
   const userId = await getCurrentUserId();
 
   if (!userId) {
@@ -84,7 +84,7 @@ export async function createPlaylist(name: string, description?: string, isPubli
       name,
       description: description ?? null,
       is_public: isPublic,
-      cover_image: null,
+      cover_image: coverImage || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -96,7 +96,7 @@ export async function createPlaylist(name: string, description?: string, isPubli
 
   const { data, error } = await supabase
     .from("playlists")
-    .insert({ user_id: userId, name, description: description ?? null, is_public: isPublic })
+    .insert({ user_id: userId, name, description: description ?? null, is_public: isPublic, cover_image: coverImage || null })
     .select()
     .single();
 
