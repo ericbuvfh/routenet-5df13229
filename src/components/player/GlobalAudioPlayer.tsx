@@ -152,6 +152,22 @@ export function GlobalAudioPlayer() {
     };
   }, []);
 
+  useEffect(() => {
+    const handleSeek = (event: Event) => {
+      const progress = (event as CustomEvent<{ progress?: number }>).detail?.progress;
+      if (typeof progress !== "number") return;
+      const ratio = Math.max(0, Math.min(1, progress));
+      if (audioRef.current && Number.isFinite(audioRef.current.duration)) {
+        audioRef.current.currentTime = ratio * audioRef.current.duration;
+        return;
+      }
+      const seconds = ratio * (currentTrack?.duration || 0);
+      if (seconds > 0) playerRef.current?.seekTo(seconds);
+    };
+    window.addEventListener("routenet-player-seek", handleSeek);
+    return () => window.removeEventListener("routenet-player-seek", handleSeek);
+  }, [currentTrack?.duration]);
+
 
   useEffect(() => {
     if (currentTrack && queue.length > 0) {

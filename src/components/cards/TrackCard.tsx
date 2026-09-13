@@ -11,6 +11,7 @@ import { CardDownloadBar, CardDownloadBadge } from "@/components/download/CardDo
 import { formatStreams } from "@/utils/formatStreams";
 import { useDownloadMode } from "@/context/DownloadModeContext";
 import { buildRadioQueue } from "@/services/radioEngine";
+import { TrackArtwork } from "@/components/media/TrackArtwork";
 
 interface TrackCardProps {
   track: Track;
@@ -92,7 +93,7 @@ export function TrackCard({ track, index, showIndex, contextTracks, download, hi
         )}
 
         <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-md">
-          <img src={track.artwork} alt={track.album} className="h-full w-full object-cover" />
+          <TrackArtwork track={track} alt={track.album || track.title} className="h-full w-full" />
           <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
             {isLoading ? <Loader2 className="h-5 w-5 text-white animate-spin" /> : <Play className="h-5 w-5 text-white" fill="white" />}
           </div>

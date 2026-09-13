@@ -365,7 +365,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const seek = useCallback((progress: number) => {
-    setState((prev) => ({ ...prev, progress: Math.max(0, Math.min(1, progress)) }));
+    const nextProgress = Math.max(0, Math.min(1, progress));
+    setState((prev) => ({ ...prev, progress: nextProgress }));
+    window.dispatchEvent(new CustomEvent("routenet-player-seek", { detail: { progress: nextProgress } }));
   }, []);
 
   const setProgress = useCallback((currentTime: number, duration: number) => {
