@@ -75,12 +75,12 @@ export function useDeezerArtist(artistName: string) {
       
       // Then get their top tracks
       const { data: tracksData } = await supabase.functions.invoke('deezer', {
-        body: { action: 'getArtistTopTracks', params: { artistId: artist.id, limit: 15 } },
+        body: { action: 'getArtistTopTracks', params: { artistId: artist.id, limit: 30 } },
       });
       
       // Get albums
       const { data: albumsData } = await supabase.functions.invoke('deezer', {
-        body: { action: 'getArtistAlbums', params: { artistId: artist.id, limit: 10 } },
+        body: { action: 'getArtistAlbums', params: { artistId: artist.id, limit: 50 } },
       });
       
       return {
