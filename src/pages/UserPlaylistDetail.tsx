@@ -17,6 +17,7 @@ export default function UserPlaylistDetail() {
   const [rows, setRows] = useState<PlaylistTrackRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) return;
