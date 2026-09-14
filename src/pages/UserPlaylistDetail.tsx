@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Globe, Lock, Plus, Trash2 } from "lucide-react";
+import { Globe, Lock, Plus, Share2, Trash2 } from "lucide-react";
+import { ShareSheet } from "@/components/ShareSheet";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import type { Track } from "@/data/mockData";
