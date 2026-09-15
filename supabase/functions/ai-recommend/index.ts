@@ -114,21 +114,44 @@ ${exclude.map((t) => `- ${t}`).join("\n") || "(none)"}
 Return a JSON object: { "tracks": [{ "title": string, "artist": string, "role": string, "reason": string }] } with exactly ${count} items.`;
 
 
-    let parsed: any = {};
-    let provider = "lovable";
-    try {
-      const res = await chatJson<any>({
-        system,
-        user,
+    // Large lists are split into parallel model calls so a 50-song queue comes
+    // back in roughly the time one 25-song call takes.
+    const chunkCount = count > 26 ? 2 : 1;
+    const perChunk = Math.ceil(count / chunkCount);
+
+    const askOnce = (n: number, seedNote: string) =>
+      chatJson<any>({
+        system: system.replace(`exactly ${count} real`, `exactly ${n} real`),
+        user: `${user}\n\n${seedNote}\nReturn exactly ${n} items.`,
         json: true,
         temperature: 0.9,
-        // OpenRouter first with a fast model; the other providers stay as fallbacks.
+        // OpenRouter first with the fastest capable model; others are fallbacks.
         prefer: "openrouter",
-        openRouterModel: "google/gemini-2.5-flash",
-        maxOutputTokens: 4000,
+        openRouterModel: "google/gemini-2.5-flash-lite",
+        maxOutputTokens: 2600,
       });
-      parsed = res.data ?? {};
-      provider = res.provider;
+
+    let provider = "openrouter";
+    const collected: any[] = [];
+    try {
+      const results = await Promise.allSettled(
+        Array.from({ length: chunkCount }, (_, i) =>
+          askOnce(perChunk, `Batch ${i + 1} of ${chunkCount} — make this batch distinct from the others.`),
+        ),
+      );
+      let anyOk = false;
+      for (const r of results) {
+        if (r.status !== "fulfilled") continue;
+        anyOk = true;
+        provider = r.value.provider;
+        const d: any = r.value.data;
+        const rows = Array.isArray(d?.tracks) ? d.tracks : Array.isArray(d) ? d : [];
+        collected.push(...rows);
+      }
+      if (!anyOk) {
+        const first = results.find((r) => r.status === "rejected") as PromiseRejectedResult | undefined;
+        throw first?.reason ?? new Error("no completion");
+      }
     } catch (e) {
       if (e instanceof LlmUnavailableError) {
         console.error("[ai-recommend] all providers failed", e.details);
@@ -137,9 +160,7 @@ Return a JSON object: { "tracks": [{ "title": string, "artist": string, "role": 
       throw e;
     }
 
-    const tracks = Array.isArray(parsed?.tracks)
-      ? parsed.tracks
-      : Array.isArray(parsed) ? parsed : [];
+    const tracks = collected;
     const seen = new Set<string>();
     const cleaned = tracks
       .map((t: any) => ({
